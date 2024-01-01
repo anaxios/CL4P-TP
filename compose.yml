@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./firebaseServiceAccountKey.json:/app/firebaseServiceAccountKey.json
+      - ./database.sqlite:/app/database.sqlite
     networks:
       - proxy
 
