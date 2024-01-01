@@ -2,11 +2,11 @@
 version: "3.5"
 services:
   cl4p-tp:
-    build: .
+    image: ghcr.io/anaxios/cl4p-tp
     container_name: cl4p-tp
     restart: unless-stopped
     env_file:
       - .env
     volumes:
-      - ./database.sqlite:/app/database.sqlite
+      - ./db:/app/db
 

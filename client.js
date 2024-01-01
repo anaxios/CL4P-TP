@@ -11,7 +11,7 @@ import Keyv from 'keyv';
 
 
 dotenv.config();
-const keyv = new Keyv('sqlite://database.sqlite');
+const keyv = new Keyv('sqlite:///app/db/database.sqlite');
 
 const client = new Client({
   intents: [
