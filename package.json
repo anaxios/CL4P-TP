@@ -1,0 +1,23 @@
+{
+  "name": "cl4p-tp",
+  "version": "0.0.1",
+  "description": "A Discord Bot using OpenAI ChatGPT API.",
+  "author": "anaxios",
+  "license": "LGPL-2.1-only",
+  "private": "true",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "prod": "pm2 start index.js -n chatgpt-bot"
+  },
+  "dependencies": {
+    "@keyv/sqlite": "^3.6.6",
+    "axios": "^1.6.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "keyv": "^4.5.4"
+  }
+}
