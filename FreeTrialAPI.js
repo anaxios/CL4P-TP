@@ -1,13 +1,18 @@
 //import express from 'express';
 import axios from 'axios';
 //import bodyParser from 'body-parser';
+import CircularBuffer from './utils/CircularBuffer.js';
 
 export default class FreeTrialAPI {
+    constructor() {
+        this.buffer = new CircularBuffer(32768);;
+    }
 
     async sendMessage(message) {
         try {
+            let llmMessage = await this.messageBuilder(message);
             const response = await axios.post('https://proxy-server-l6vsfbzhba-uw.a.run.app/complete', 
-                message,
+                llmMessage,
                 {
                   headers: {
                     'Content-Type': 'application/json'
@@ -18,8 +23,37 @@ export default class FreeTrialAPI {
             console.log(error);
         }
     }
-}
 
+    /**
+     * Builds the message object for the FreeTrialAPI.
+     * @param {Array<Object>} messageHistory - The message history.
+     * @returns {Promise<Object>} The message object.
+     */
+    async messageBuilder(messageHistory) {
+        return {
+            "model": "gpt-4",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": process.env.SYSTEM_MESSAGE
+                },
+                ...messageHistory.map(element => {
+                    if (element.author == client.user.id) {
+                        return {
+                            "role": "assistant",
+                            "content": element.content
+                        };
+                    } else if (element.author != client.user.id) {
+                        return {
+                            "role": "user",
+                            "content": element.content
+                        };
+                    }
+                })
+            ]
+        }
+    }
+}
 // const testMessage = {
 //     "model": "gpt-4",
 //     "messages": [

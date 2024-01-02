@@ -17,7 +17,7 @@ import dotenv from 'dotenv';
 import Keyv from 'keyv';
 
 dotenv.config();
-
+MODEL_CONTEXT_LENGTH = 32768;
 /**
  * Represents the Keyv instance for connecting to the SQLite database.
  * @type {Keyv}
@@ -206,7 +206,7 @@ const REPLY = '19';
  */
 client.on("messageCreate", async message => {
   let messageHistory = await getMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
-  let llmMessage = await llmMessageBuilder(messageHistory);
+
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
@@ -216,7 +216,7 @@ client.on("messageCreate", async message => {
   //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
-      var res = await llm.sendMessage(llmMessage);
+      var res = await llm.sendMessage(messageHistory);
       let iterator = messageIterator(res.data);
       for await (let chunk of iterator) {
         await message.reply(chunk);
@@ -252,35 +252,6 @@ async function getMessageHistory(message, limit = 20) {
     .catch(console.error);
 }
 
-/**
- * Builds the message object for the FreeTrialAPI.
- * @param {Array<Object>} messageHistory - The message history.
- * @returns {Promise<Object>} The message object.
- */
-async function llmMessageBuilder(messageHistory) {
-  return {
-    "model": "gpt-4",
-    "messages": [
-      {
-        "role": "system",
-        "content": process.env.SYSTEM_MESSAGE
-      },
-      ...messageHistory.map(element => {
-        if (element.author == client.user.id) {
-          return {
-            "role": "assistant",
-            "content": element.content
-          };
-        } else if (element.author != client.user.id) {
-          return {
-            "role": "user",
-            "content": element.content
-          };
-        }
-      })
-    ]
-  }
-}
 
 
 /**
@@ -298,3 +269,4 @@ async function* messageIterator(arr, chunkSize = 2000) {
     index += chunkSize;
   }
 }
+
