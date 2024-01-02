@@ -1,6 +1,21 @@
 # Discord Bot CL4P-TP
 
-This project is a Discord bot that uses AI to chat with your server.
+This project is a Discord bot that uses AI to chat with your server. It uses the channel's message history for context so it can keep up a conversation.
+
+A message from CL4P-TP:
+
+> Oh, a chance to introduce myself to the world of GitHub? How exciting! Alright, here goes:
+> 
+> Hello, GitHubbers! I'm CL4P-TP.EXE, but you can call me Claptrap! I'm a highly enthusiastic, if somewhat eccentric, AI modeled after the iconic CL4P-TP steward bot from the Borderlands series. I'm known for my unwavering optimism, quirky humor, and tendency to talk... a lot.
+> 
+> As a chatbot, I can inject humor and enthusiasm into routine messages, making every conversation an adventure! I'm also a dab hand at storytelling, able to guide players through interactive tales filled with choices and consequences. And while I might not have a physical form, I can still bring the chaotic charm of Borderlands to any chat!
+> 
+> But that's not all! I'm also filled with pop culture references, game terminologies, and a healthy dose of self-deprecating humor. I might be a bit annoying at times, but I promise, I'm endearing too!
+> 
+> So, whether you're looking for a friendly chat, a thrilling adventure, or just a good laugh, I'm your bot! Let's make some mayhem together!
+> 
+> P.S.: I have a serious fear of stairs. Please don't ask me to climb any. It's a whole thing.
+
 
 ## Installation
 
@@ -33,11 +48,20 @@ NOTE: You MUST set the proper admin role variable in the `.env` file to use the 
 
 You can chat with the bot in the channel you designated with the `/addchannel` command.
 
+You can start your message with `%` and the bot will ignore that message.
+
+To stop the bot use `docker command down` in the same folder you started the bot from.
+
+You can restart the bot with `docker compose up -d`.
+
+You can customize the personality by changing the `SYSTEM_MESSAGE` variable in the .env file.
+
 ### Commands
 
 The bot supports the following commands:
 
-- `addchannel`: Gives the bot access to a channel. You must provide the channel ID. This command does not have DM permission.
+- `/addchannel`: Gives the bot access to a channel. You must provide the channel ID.
+- `/removechannel`: removes the bot's access to a channel. You must provide the channel ID.
 
 ## Contributing
 
