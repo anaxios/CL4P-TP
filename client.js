@@ -98,10 +98,10 @@ const commands = [
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
       { body: commands }
     );
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, '998837617141493760'),
-      { body: commands }
-    );
+    // await rest.put(
+    //   Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, '998837617141493760'),
+    //   { body: commands }
+    // );
     console.log('Successfully reloaded application (/) commands.');
   } catch (error) {
     console.error(error);
