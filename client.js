@@ -168,12 +168,14 @@ client.on('interactionCreate', async interaction => {
     console.log(channel.id);
 
     await interaction.reply(`Removed bot chat permission in ${channel.name}`);
+
+    return
   }
 
   if (commandName === 'dm') {
     await interaction.reply({ content: 'DMing you now!', ephemeral: true });
-    await keyv.set(dmChannel.id, client.user.id);
     const dmChannel = await interaction.user.createDM();
+    await keyv.set(dmChannel.id, client.user.id);
     console.log(dmChannel.id); // This will log the ID of the DM channel
     await interaction.user.send('Hello!');
   }
