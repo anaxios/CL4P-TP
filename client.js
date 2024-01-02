@@ -15,6 +15,7 @@ import {
     from 'discord.js';
 import dotenv from 'dotenv';
 import Keyv from 'keyv';
+import CircularBuffer from './utils/CircularBuffer.js';
 
 dotenv.config();
 /**
@@ -22,6 +23,8 @@ dotenv.config();
  * @type {Keyv}
  */
 const keyv = new Keyv('sqlite:///app/db/database.sqlite');
+const buffer = new CircularBuffer(keyv, process.env.MODEL_CONTEXT_LENGTH);
+buffer.init();
 
 /**
  * Represents the Discord bot client.
@@ -143,7 +146,6 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     await keyv.set(channel.id, client.user.id);
-    console.log(channel.id);
 
     await interaction.reply(`Added bot chat permission in ${channel.name}`);
 
@@ -164,7 +166,6 @@ client.on('interactionCreate', async interaction => {
       return;
     }
     await keyv.delete(channel.id);
-    console.log(channel.id);
 
     await interaction.reply(`Removed bot chat permission in ${channel.name}`);
 
@@ -175,7 +176,6 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply({ content: 'DMing you now!', ephemeral: true });
     const dmChannel = await interaction.user.createDM();
     await keyv.set(dmChannel.id, client.user.id);
-    console.log(dmChannel.id); // This will log the ID of the DM channel
     await interaction.user.send('Hello!');
   }
 });
@@ -186,17 +186,6 @@ client.on('interactionCreate', async interaction => {
  */
 const llm = new FreeTrialAPI();
 
-/**
- * Represents the default message type.
- * @type {string}
- */
-const DEFAULT = '0';
-
-/**
- * Represents the reply message type.
- * @type {string}
- */
-const REPLY = '19';
 
 /**
  * Event handler for when a message is created.
@@ -204,8 +193,11 @@ const REPLY = '19';
  * @returns {Promise<void>}
  */
 client.on("messageCreate", async message => {
-  let messageHistory = await getMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
 
+  // Put last message in buffer
+  //let messageHistory = await initGetMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
+  let formattedMessage = await formatMessage(message);
+  await buffer.enqueue(formattedMessage);
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
@@ -215,11 +207,10 @@ client.on("messageCreate", async message => {
   //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
-      var res = await llm.sendMessage(messageHistory, client);
+      var res = await llm.sendMessage(buffer, client);
       let iterator = messageIterator(res.data);
       for await (let chunk of iterator) {
         await message.reply(chunk);
-        console.log(chunk);
       }
     } catch (e) {
       console.error(e)
@@ -234,10 +225,18 @@ client.on("messageCreate", async message => {
  * @param {number} [limit=20] - The maximum number of messages to fetch.
  * @returns {Promise<Array<Object>>} The message history.
  */
-async function getMessageHistory(message, limit = 20) {
+async function initGetMessageHistory(message, limit = 100) {
   let channel = message.channel; // The channel the command was executed in
-
-  return channel.messages.fetch({ limit: limit }) // Fetch last 100 messages
+  if (limit < 2) {
+    return await channel.messages.fetch({ limit: 1 })
+      .then(message => { 
+        return {
+            "author": message.author.id, 
+            "content": message.content
+        };
+      }).catch(console.error); // Fetch last 1 message
+  }
+  return await channel.messages.fetch({ limit: limit }) // Fetch last 100 messages
     .then(messages => messages
       .map(element => {
         return {
@@ -251,6 +250,15 @@ async function getMessageHistory(message, limit = 20) {
     .catch(console.error);
 }
 
+
+async function formatMessage(message) {
+  let channel = message.channel; // The channel the command was executed
+  return {
+    "author": message.author.id,
+    "authorName": message.author.username,
+    "content": message.content
+  };
+}
 
 
 /**

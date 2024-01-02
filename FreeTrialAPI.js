@@ -7,13 +7,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default class FreeTrialAPI {
-    constructor() {
-        this.buffer = new CircularBuffer(32768);;
-    }
-
-    async sendMessage(message, client) {
+    async sendMessage(buffer, client) {
         try {
-            let llmMessage = await this.messageBuilder(message, client);
+            //console.log("buffer.read():  ", buffer.read());
+            let llmMessage = await this.messageBuilder(await buffer.read(), client);
             const response = await axios.post('https://proxy-server-l6vsfbzhba-uw.a.run.app/complete', 
                 llmMessage,
                 {
@@ -33,6 +30,7 @@ export default class FreeTrialAPI {
      * @returns {Promise<Object>} The message object.
      */
     async messageBuilder(messageHistory, client) {
+
         return {
             "model": "gpt-4",
             "messages": [
@@ -49,7 +47,7 @@ export default class FreeTrialAPI {
                     } else if (element.author != client.user.id) {
                         return {
                             "role": "user",
-                            "content": element.content
+                            "content": `${element.authorName}: ${element.content}`
                         };
                     }
                 })
