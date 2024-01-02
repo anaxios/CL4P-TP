@@ -2,6 +2,9 @@
 import axios from 'axios';
 //import bodyParser from 'body-parser';
 import CircularBuffer from './utils/CircularBuffer.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export default class FreeTrialAPI {
     constructor() {
