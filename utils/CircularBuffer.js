@@ -53,7 +53,11 @@ export default class CircularBuffer {
     }
 
     async countBytes(data) {
-        return Buffer.byteLength(Object.entries(data).flat().join(), 'utf8');
+        if (obj !== undefined && obj !== null) {
+            return Buffer.byteLength(Object.entries(data).flat().join(), 'utf8');
+        } else {
+            return 0;
+        }
     }
 }
 
