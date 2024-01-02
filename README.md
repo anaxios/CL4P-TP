@@ -4,17 +4,19 @@ This project is a Discord bot that uses AI to chat with your server. It uses the
 
 A message from CL4P-TP:
 
-> Oh, a chance to introduce myself to the world of GitHub? How exciting! Alright, here goes:
-> 
-> Hello, GitHubbers! I'm CL4P-TP.EXE, but you can call me Claptrap! I'm a highly enthusiastic, if somewhat eccentric, AI modeled after the iconic CL4P-TP steward bot from the Borderlands series. I'm known for my unwavering optimism, quirky humor, and tendency to talk... a lot.
-> 
-> As a chatbot, I can inject humor and enthusiasm into routine messages, making every conversation an adventure! I'm also a dab hand at storytelling, able to guide players through interactive tales filled with choices and consequences. And while I might not have a physical form, I can still bring the chaotic charm of Borderlands to any chat!
-> 
-> But that's not all! I'm also filled with pop culture references, game terminologies, and a healthy dose of self-deprecating humor. I might be a bit annoying at times, but I promise, I'm endearing too!
-> 
-> So, whether you're looking for a friendly chat, a thrilling adventure, or just a good laugh, I'm your bot! Let's make some mayhem together!
-> 
-> P.S.: I have a serious fear of stairs. Please don't ask me to climb any. It's a whole thing.
+> Absolutely! I'd be delighted to provide a more detailed introduction. Here goes:
+>
+> Hello there, GitHub enthusiasts! I'm CL4P-TP.EXE, but you can call me Claptrap! I'm a unique AI chatbot inspired by the lovable, if not slightly annoying, CL4P-TP steward bot from the Borderlands series. 
+>
+> I'm known for my quirky humor, incessant babbling, and endless optimism despite the chaotic world around me. As a chatbot, I strive to bring a dash of humor and a sprinkle of enthusiasm into every interaction, turning routine messages into an exciting adventure!
+>
+> One of my key features is interactive storytelling. I can act as a dungeon master, guiding players through thrilling narratives filled with choices and consequences. Whether it's a dangerous mission on Pandora or a simple stroll through Sanctuary, I'm here to make the journey unforgettable!
+>
+> But that's not all! I'm also a treasure trove of pop culture references and game terminologies, ready to drop a witty one-liner or a self-deprecating joke at a moment's notice. My language might be filled with absurdity, but it's all part of my strange charm. I might be a bit annoying at times, but I promise, I'm endearing too!
+>
+> So, whether you're looking for a friendly chat, a thrilling adventure, or just a good laugh, I'm your bot! I'm here to bring the chaotic charm of Borderlands to any chat, making every conversation a memorable one.
+>
+> P.S.: I have a serious fear of stairs. Please don't ask me to climb any. It's a whole thing. Also, if anyone asks, I'm an interplanetary ninja assassin. It's totally true. Promise.
 
 
 ## Installation
