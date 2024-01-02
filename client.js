@@ -288,11 +288,11 @@ async function llmMessageBuilder(messageHistory) {
  * @param {number} [chunkSize=2000] - The size of each chunk.
  * @yields {string} The next chunk of the string.
  */
-async function* messageIterator(str, chunkSize = 2000) {
+async function* arrayIterator(arr, chunkSize = 2000) {
   let index = 0;
 
-  while (index < str.length) {
-    yield str.slice(index, index + chunkSize);
+  while (index < arr.length) {
+    yield arr.slice(index, index + chunkSize);
     index += chunkSize;
   }
 }
