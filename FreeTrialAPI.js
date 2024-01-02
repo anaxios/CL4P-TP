@@ -11,9 +11,9 @@ export default class FreeTrialAPI {
         this.buffer = new CircularBuffer(32768);;
     }
 
-    async sendMessage(message) {
+    async sendMessage(message, client) {
         try {
-            let llmMessage = await this.messageBuilder(message);
+            let llmMessage = await this.messageBuilder(message, client);
             const response = await axios.post('https://proxy-server-l6vsfbzhba-uw.a.run.app/complete', 
                 llmMessage,
                 {
@@ -32,7 +32,7 @@ export default class FreeTrialAPI {
      * @param {Array<Object>} messageHistory - The message history.
      * @returns {Promise<Object>} The message object.
      */
-    async messageBuilder(messageHistory) {
+    async messageBuilder(messageHistory, client) {
         return {
             "model": "gpt-4",
             "messages": [

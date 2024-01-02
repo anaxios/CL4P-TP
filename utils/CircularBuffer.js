@@ -2,7 +2,7 @@
  * Represents a circular buffer.
  * @class
  */
-class CircularBuffer {
+export default class CircularBuffer {
     constructor(capacity) {
       this.buffer = [];
       this.byteSize = 0;
@@ -33,4 +33,3 @@ class CircularBuffer {
 
   const buffer = new CircularBuffer(32768);
 
-  

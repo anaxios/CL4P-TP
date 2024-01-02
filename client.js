@@ -17,7 +17,6 @@ import dotenv from 'dotenv';
 import Keyv from 'keyv';
 
 dotenv.config();
-MODEL_CONTEXT_LENGTH = 32768;
 /**
  * Represents the Keyv instance for connecting to the SQLite database.
  * @type {Keyv}
@@ -216,7 +215,7 @@ client.on("messageCreate", async message => {
   //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
-      var res = await llm.sendMessage(messageHistory);
+      var res = await llm.sendMessage(messageHistory, client);
       let iterator = messageIterator(res.data);
       for await (let chunk of iterator) {
         await message.reply(chunk);
