@@ -282,13 +282,15 @@ async function llmMessageBuilder(messageHistory) {
   }
 }
 
+
 /**
- * Iterates over a string and yields chunks of a specified size.
- * @param {string} str - The string to iterate over.
+ * Generates an asynchronous iterator that yields chunks of an array.
+ *
+ * @param {Array} arr - The array to iterate over.
  * @param {number} [chunkSize=2000] - The size of each chunk.
- * @yields {string} The next chunk of the string.
+ * @returns {AsyncGenerator<Array>} The asynchronous iterator.
  */
-async function* arrayIterator(arr, chunkSize = 2000) {
+async function* messageIterator(arr, chunkSize = 2000) {
   let index = 0;
 
   while (index < arr.length) {
