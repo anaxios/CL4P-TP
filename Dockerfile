@@ -6,7 +6,7 @@ COPY package*.json .
 
 RUN npm install
 
-COPY utils .
+COPY utils/ .
 COPY FreeTrialAPI.js .
 COPY client.js .
 
