@@ -1,3 +1,10 @@
+/**
+ * @fileoverview This file contains the code for a Discord bot client that interacts with the Discord API and performs various tasks.
+ * @module client
+ */
+
+// FILEPATH: /home/ilguappo/docker/CL4P-TP-old/client.js
+
 import FreeTrialAPI from "./FreeTrialAPI.js";
 import {
     Client, REST, Partials,
@@ -9,10 +16,18 @@ import {
 import dotenv from 'dotenv';
 import Keyv from 'keyv';
 
-
 dotenv.config();
+
+/**
+ * Represents the Keyv instance for connecting to the SQLite database.
+ * @type {Keyv}
+ */
 const keyv = new Keyv('sqlite:///app/db/database.sqlite');
 
+/**
+ * Represents the Discord bot client.
+ * @type {Client}
+ */
 const client = new Client({
   intents: [
       GatewayIntentBits.Guilds,
@@ -25,9 +40,16 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
+/**
+ * Logs in the Discord bot client using the provided token.
+ * @returns {Promise<void>}
+ */
 client.login(process.env.DISCORD_BOT_TOKEN).catch(e => console.log(e));
 
-
+/**
+ * Represents the slash commands for the Discord bot.
+ * @type {Array<Object>}
+ */
 const commands = [
   {
     name: 'addchannel',
@@ -54,12 +76,19 @@ const commands = [
         required: true
       }
     ]
+  },
+  {
+    name: 'dm',
+    description: 'Bot will start a DM with you',
+    dm_permission: false,
   }
 ];
 
-
+/**
+ * Initializes the slash commands for the Discord bot.
+ * @returns {Promise<void>}
+ */
 (async () => {
-  
   try {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
     console.log('Started refreshing application (/) commands.');
@@ -73,6 +102,9 @@ const commands = [
   }
 })();
 
+/**
+ * Event handler for when the Discord bot client is ready.
+ */
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   console.log('Connected to Discord Gateway');
@@ -80,6 +112,11 @@ client.once('ready', () => {
   client.user.setStatus('online');
 });
 
+/**
+ * Event handler for when an interaction (slash command) is created.
+ * @param {Interaction} interaction - The interaction object representing the interaction.
+ * @returns {Promise<void>}
+ */
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
 
@@ -87,7 +124,6 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply('You do not have the required role to use this command.');
     return
   }
-
 
   const { commandName } = interaction;
 
@@ -108,7 +144,11 @@ client.on('interactionCreate', async interaction => {
 
     await interaction.reply(`Added bot chat permission in ${channel.name}`);
 
-  } else if (commandName === 'removechannel') {
+    return
+
+  } 
+  
+  if (commandName === 'removechannel') {
     let channel = interaction.options.getChannel('channel');
     if (!channel) {
       await interaction.reply({ content: 'No channel found with that ID!', ephemeral: true });
@@ -125,14 +165,39 @@ client.on('interactionCreate', async interaction => {
 
     await interaction.reply(`Removed bot chat permission in ${channel.name}`);
   }
+
+  if (commandName === 'dm') {
+    await interaction.reply({ content: 'DMing you now!', ephemeral: true });
+    await keyv.set(dmChannel.id, client.user.id);
+    const dmChannel = await interaction.user.createDM();
+    console.log(dmChannel.id); // This will log the ID of the DM channel
+    await interaction.user.send('Hello!');
+  }
 });
 
-
+/**
+ * Represents the FreeTrialAPI instance.
+ * @type {FreeTrialAPI}
+ */
 const llm = new FreeTrialAPI();
 
+/**
+ * Represents the default message type.
+ * @type {string}
+ */
 const DEFAULT = '0';
+
+/**
+ * Represents the reply message type.
+ * @type {string}
+ */
 const REPLY = '19';
-  // Direct Message Handler
+
+/**
+ * Event handler for when a message is created.
+ * @param {Message} message - The message object representing the created message.
+ * @returns {Promise<void>}
+ */
 client.on("messageCreate", async message => {
   let messageHistory = await getMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
   let llmMessage = await llmMessageBuilder(messageHistory);
@@ -158,6 +223,12 @@ client.on("messageCreate", async message => {
 //}
 );
 
+/**
+ * Retrieves the message history for a given channel.
+ * @param {Message} message - The message object representing the current message.
+ * @param {number} [limit=20] - The maximum number of messages to fetch.
+ * @returns {Promise<Array<Object>>} The message history.
+ */
 async function getMessageHistory(message, limit = 20) {
   let channel = message.channel; // The channel the command was executed in
 
@@ -175,6 +246,11 @@ async function getMessageHistory(message, limit = 20) {
     .catch(console.error);
 }
 
+/**
+ * Builds the message object for the FreeTrialAPI.
+ * @param {Array<Object>} messageHistory - The message history.
+ * @returns {Promise<Object>} The message object.
+ */
 async function llmMessageBuilder(messageHistory) {
   return {
     "model": "gpt-4",
@@ -198,9 +274,14 @@ async function llmMessageBuilder(messageHistory) {
       })
     ]
   }
-
 }
 
+/**
+ * Iterates over a string and yields chunks of a specified size.
+ * @param {string} str - The string to iterate over.
+ * @param {number} [chunkSize=2000] - The size of each chunk.
+ * @yields {string} The next chunk of the string.
+ */
 async function* messageIterator(str, chunkSize = 2000) {
   let index = 0;
 
