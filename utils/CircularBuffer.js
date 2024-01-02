@@ -1,3 +1,4 @@
+import { managerToFetchingStrategyOptions } from "discord.js";
 import Keyv from "keyv";
 
 /**
@@ -14,8 +15,10 @@ export default class CircularBuffer {
 
     async init() {
         let messageHistory = await this.keyv.get('messageHistory');
+        let messageHistoryLength = await this.keyv.get('messageHistoryLength');
         if (messageHistory) {
             this.buffer = messageHistory;
+            this.byteSize = messageHistoryLength;
         }
     }
   
@@ -32,6 +35,7 @@ export default class CircularBuffer {
         this.buffer.push(data);
         let messageHistory = await this.read();
         await this.keyv.set('messageHistory', messageHistory);
+        await this.keyv.set('messageHistoryLength', this.byteSize);
     }
       
     async dequeue() {
