@@ -167,7 +167,7 @@ client.on('interactionCreate', async interaction => {
     }
     await keyv.delete(channel.id);
 
-    await interaction.reply(`Removed bot chat permission in ${channel.name}`);
+    await interaction.reply({ content: 'Removed bot chat permission in', ephemeral: true });
 
     return
   }
