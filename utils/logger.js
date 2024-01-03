@@ -1,18 +1,18 @@
 //import assert from 'node:assert';
-import { fstat } from 'node:fs';
+import fs from 'fs';
 
 export default class Logger {
 
-    static info(message) {
+    info(message) {
         this.log("INFO", message);
     }
-    static warn(message) {
+    warn(message) {
         this.log("WARN", message);
     }
-    static error(message) {
+    error(message) {
         this.log("ERROR", message);
     }
-    static debug(message) {
+    debug(message) {
         if (process.env.DEBUG == "true")
             this.log("DEBUG", message);
     }
@@ -22,7 +22,7 @@ export default class Logger {
         console.log(`${logLevel}: ${message}`);
     }
 
-    writeToDisk(message, filename = './LOG') {
+    writeToDisk(message, filename = '/app/LOG') {
         fs.appendFile(filename, message + '\n', function (err) {
             if (err) throw err;
             console.log('Cannot write to logs to disk');

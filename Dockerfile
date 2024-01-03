@@ -6,8 +6,8 @@ COPY package*.json .
 
 RUN npm install
 
+COPY ./llmAPI /app/llmAPI 
 COPY ./utils /app/utils
-COPY FreeTrialAPI.js .
 COPY client.js .
 
 ENV DISCORD_CLIENT_ID=$DISCORD_CLIENT_ID

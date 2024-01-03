@@ -6,27 +6,24 @@ import { Tiktoken } from "tiktoken/lite";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json" assert { type: 'json' };
 
 
-
-/**
- * Represents a circular buffer. 8192
- * @class
- */
 export default class CircularBuffer {
-    constructor(keyv, capacity = 8192) {
+    constructor(keyv, capacity = 4096) {
       this.buffer = [];
-      this.byteSize = 0;
+      this.currentBufferSize = 0;
       this.capacity = capacity;
       this.keyv = keyv;
       this.encoding;
       this.totalTokens = 0;
+      this.logger = new Logger();
     }
 
     async init() {
         let messageHistory = await this.keyv.get('messageHistory');
-        //let messageHistoryLength = await this.keyv.get('messageHistoryLength');
+        let messageHistoryLength = await this.keyv.get('messageHistoryLength');
         if (messageHistory) {
             this.buffer = messageHistory;
-            this.byteSize = messageHistory.length;
+            this.currentBufferSize = messageHistoryLength;
+            this.logger.debug(`buffer length on load: ${this.currentBufferSize}`);
         }
     }
   
@@ -35,21 +32,21 @@ export default class CircularBuffer {
         // if (itemByteSize > this.capacity) {
         //     throw new Error('Item exceeds buffer capacity!');
         // }
-        while (this.byteSize + itemByteSize > this.capacity) {
+        while (this.currentBufferSize + itemByteSize > this.capacity) {
             let removedItem = await this.dequeue();
-            this.byteSize -= await this.countBytes(removedItem);
+            this.currentBufferSize -= await this.countBytes(removedItem);
         }
-        this.byteSize += itemByteSize;
-        Logger.debug(`current buffer size: ${this.byteSize}`);
+        this.currentBufferSize += itemByteSize;
+        this.logger.debug(`current buffer size: ${this.currentBufferSize}`);
         this.buffer.push(data);
         let messageHistory = await this.read();
         await this.keyv.set('messageHistory', messageHistory);
-        await this.keyv.set('messageHistoryLength', this.byteSize);
+        await this.keyv.set('messageHistoryLength', this.currentBufferSize);
     }
       
     async dequeue() {
         let removedItem = this.buffer.shift();
-        Logger.debug("dequeue: " + removedItem);
+        this.logger.debug("dequeue: " + removedItem);
         return removedItem;
     }
 
@@ -59,7 +56,7 @@ export default class CircularBuffer {
 
     async clear() {
         this.buffer = [];
-        this.byteSize = 0;
+        this.currentBufferSize = 0;
     }
 
     async isEmpty() {
@@ -77,7 +74,7 @@ export default class CircularBuffer {
             let result = enc.encode(Object.entries(data).flat().join()).length;
             enc.free();
             this.totalTokens += result;
-            Logger.debug(`TOKENS USED SINCE LAUNCH: ${this.totalTokens}`);
+            this.logger.debug(`TOKENS USED SINCE LAUNCH: ${this.totalTokens}`);
             return result;
         } else {
             return 0;

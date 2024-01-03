@@ -5,7 +5,7 @@
 
 // FILEPATH: /home/ilguappo/docker/CL4P-TP-old/client.js
 
-import FreeTrialAPI from "./FreeTrialAPI.js";
+import llmFactory from "./llmAPI/llmFactory.js";
 import {
     Client, REST, Partials,
     GatewayIntentBits, Routes,
@@ -16,6 +16,7 @@ import {
 import dotenv from 'dotenv';
 import Keyv from 'keyv';
 import CircularBuffer from './utils/CircularBuffer.js';
+import Logger from "./utils/logger.js";
 
 dotenv.config();
 /**
@@ -184,7 +185,8 @@ client.on('interactionCreate', async interaction => {
  * Represents the FreeTrialAPI instance.
  * @type {FreeTrialAPI}
  */
-const llm = new FreeTrialAPI();
+const l = new llmFactory();
+const llm = l.init();
 
 
 /**
@@ -196,22 +198,39 @@ client.on("messageCreate", async message => {
 
   // Put last message in buffer
   //let messageHistory = await initGetMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
-  let formattedMessage = await formatMessage(message);
-  await buffer.enqueue(formattedMessage);
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
   if (!await keyv.get(message.channel.id)) return;
   if (message.content.startsWith(process.env.BOT_SHUTUP_PREFIX)) return;
   if (message.type == MessageType.SYSTEM_MESSAGE) return;
+
+  let formattedMessage = await formatMessage(message);
+  await buffer.enqueue(formattedMessage);
   //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
+      // if (result.response.choices[0].finish_reason == "function_call") {
+      //   await message.reply("I don't know what to say to that.");
+      //   return;
+      // }
       var res = await llm.sendMessage(buffer, client);
-      let iterator = messageIterator(res.data);
+      // if ('result' in res) {
+      //   new Logger().debug(`LLM MESSAGE RESPONSE: ${res.result.response}`);
+
+      //   let iterator = messageIterator(res.result.response);
+      //   for await (let chunk of iterator) {
+      //     await message.reply(chunk);
+      //   }
+      //   return;
+      // }
+
+      new Logger().debug(`LLM MESSAGE RESPONSE: ${res}`);
+      let iterator = messageIterator(res);
       for await (let chunk of iterator) {
         await message.reply(chunk);
       }
+
     } catch (e) {
       console.error(e)
     }
