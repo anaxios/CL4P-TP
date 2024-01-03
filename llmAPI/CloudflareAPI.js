@@ -6,9 +6,13 @@ import DefaultAPI from "./DefaultAPI.js";
 dotenv.config();
 
 export default class CloudflareAPI extends DefaultAPI {
-    async sendMessage(buffer, client) {
+    constructor(keyv) {
+        super(keyv);
+    }
+    async sendMessage(formattedMessage, client) {
         try {
-            let llmMessage = await this.messageBuilder(await buffer.read(), client);
+            await this.buffer.enqueue(formattedMessage);
+            let llmMessage = await this.messageBuilder(await this.buffer.read(), client);
             const response = await fetch(process.env.APT_ENDPOINT,{
                 method: 'POST',
                 headers: {
@@ -17,7 +21,7 @@ export default class CloudflareAPI extends DefaultAPI {
                 body: JSON.stringify(llmMessage)
             });
             const data = await response.text();
-            new Logger().debug(`LLM API RESPONSE: ${data}`);
+            new Logger().debug(`LLM API RESPONSE: ${data.replace(/\\n/g, '<br>')}`);
             return data;
 
         } catch (error) {

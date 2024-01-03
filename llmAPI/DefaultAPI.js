@@ -1,31 +1,30 @@
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import Logger from "../utils/logger.js";
-import CircularBuffer from '../utils/CircularBuffer.js';
+import TokenBuffer from '../utils/TokenBuffer.js';
+import axios from 'axios';
 
 dotenv.config();
 
 export default class DefaultAPI {
     constructor(keyv) {
         this.logger = new Logger();
-        this.buffer = new CircularBuffer(keyv, 8000);
+        this.buffer = new TokenBuffer(keyv, 8000);
         this.buffer.init();
     }
     async sendMessage(formattedMessage, client) {
         try {
             await this.buffer.enqueue(formattedMessage);
             let llmMessage = await this.messageBuilder(await this.buffer.read(), client);
-            const response = await fetch(`https://proxy-server-l6vsfbzhba-uw.a.run.app/complete`,{
-                method: 'POST',
+            const response = await axios.post(`https://proxy-server-l6vsfbzhba-uw.a.run.app/complete`, llmMessage, {
                 headers: {
                     'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(llmMessage)
+                }
             });
-            const data = await response.text();
+            const data = response.data;
             new Logger().debug(`LLM API RESPONSE: ${data}`);
             return data;
-
+    
         } catch (error) {
             console.log(error);
         }

@@ -6,7 +6,7 @@ import { Tiktoken } from "tiktoken/lite";
 import cl100k_base from "tiktoken/encoders/cl100k_base.json" assert { type: 'json' };
 
 
-export default class CircularBuffer {
+export default class TokenBuffer {
     constructor(keyv, capacity = 4096) {
       this.buffer = [];
       this.currentBufferSize = 0;
