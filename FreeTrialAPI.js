@@ -9,7 +9,6 @@ dotenv.config();
 export default class FreeTrialAPI {
     async sendMessage(buffer, client) {
         try {
-            //console.log("buffer.read():  ", buffer.read());
             let llmMessage = await this.messageBuilder(await buffer.read(), client);
             const response = await axios.post('https://proxy-server-l6vsfbzhba-uw.a.run.app/complete', 
                 llmMessage,
@@ -18,7 +17,12 @@ export default class FreeTrialAPI {
                     'Content-Type': 'application/json'
                   }
                 });
-            return response;
+            if (response) {
+                return response;
+            } else {
+                console.log('Response is undefined');
+                return response.data;
+            }
         } catch (error) {
             console.log(error);
         }
