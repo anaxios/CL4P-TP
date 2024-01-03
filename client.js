@@ -147,7 +147,7 @@ client.on('interactionCreate', async interaction => {
     }
     await keyv.set(channel.id, client.user.id);
 
-    await interaction.reply(`Added bot chat permission in ${channel.name}`);
+    await interaction.reply({ content: 'Added bot chat permission in', ephemeral: true });
 
     return
 
