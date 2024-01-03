@@ -1,13 +1,20 @@
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import Logger from "../utils/logger.js";
+import CircularBuffer from '../utils/CircularBuffer.js';
 
 dotenv.config();
 
-export default class FreeTrialAPI {
-    async sendMessage(buffer, client) {
+export default class DefaultAPI {
+    constructor(keyv) {
+        this.logger = new Logger();
+        this.buffer = new CircularBuffer(keyv, 8000);
+        this.buffer.init();
+    }
+    async sendMessage(formattedMessage, client) {
         try {
-            let llmMessage = await this.messageBuilder(await buffer.read(), client);
+            await this.buffer.enqueue(formattedMessage);
+            let llmMessage = await this.messageBuilder(await this.buffer.read(), client);
             const response = await fetch(`https://proxy-server-l6vsfbzhba-uw.a.run.app/complete`,{
                 method: 'POST',
                 headers: {
@@ -32,7 +39,7 @@ export default class FreeTrialAPI {
     async messageBuilder(messageHistory, client) {
 
         return {
-            "model": `${process.env.MODEL_NAME}`,
+            "model": `gpt-4`,
             // "functions": [{
             //     "name": "get_current_weather",
             //     "description": "Get the current weather in a given location",

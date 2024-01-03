@@ -1,24 +1,25 @@
 import dotenv from 'dotenv';
 import Logger from "../utils/logger.js";
 import CloudflareAPI from "./CloudflareAPI.js";
-import FreeTrialAPI from "./DefaultAPI.js";
+import DefaultAPI from "./DefaultAPI.js";
 
 dotenv.config();
 
 export default class llmFactory {
-    constructor() {
+    constructor(keyv) {
         this.llm = process.env.LLM_SERVICE;
         this.logger = new Logger();
+        this.keyv = keyv;
     }
-    init () {
+    new () {
         this.logger.debug(`LLM API: ${this.llm}`);
 
         switch (this.llm) {
             case 'cloudflare':
-                return new CloudflareAPI();
+                return new CloudflareAPI(this.keyv);
                 break;
             default:
-                return new FreeTrialAPI();
+                return new DefaultAPI(this.keyv);
         }
     }
 }

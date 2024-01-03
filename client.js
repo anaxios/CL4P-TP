@@ -1,10 +1,3 @@
-/**
- * @fileoverview This file contains the code for a Discord bot client that interacts with the Discord API and performs various tasks.
- * @module client
- */
-
-// FILEPATH: /home/ilguappo/docker/CL4P-TP-old/client.js
-
 import llmFactory from "./llmAPI/llmFactory.js";
 import {
     Client, REST, Partials,
@@ -15,7 +8,6 @@ import {
     from 'discord.js';
 import dotenv from 'dotenv';
 import Keyv from 'keyv';
-import CircularBuffer from './utils/CircularBuffer.js';
 import Logger from "./utils/logger.js";
 
 dotenv.config();
@@ -24,8 +16,7 @@ dotenv.config();
  * @type {Keyv}
  */
 const keyv = new Keyv('sqlite:///app/db/database.sqlite');
-const buffer = new CircularBuffer(keyv, process.env.MODEL_CONTEXT_LENGTH);
-buffer.init();
+
 
 /**
  * Represents the Discord bot client.
@@ -181,12 +172,9 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-/**
- * Represents the FreeTrialAPI instance.
- * @type {FreeTrialAPI}
- */
-const l = new llmFactory();
-const llm = l.init();
+
+const l = new llmFactory(keyv);
+const llm = l.new();
 
 
 /**
@@ -196,7 +184,6 @@ const llm = l.init();
  */
 client.on("messageCreate", async message => {
 
-  // Put last message in buffer
   //let messageHistory = await initGetMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
 
   if (message.author.bot) return;
@@ -206,7 +193,7 @@ client.on("messageCreate", async message => {
   if (message.type == MessageType.SYSTEM_MESSAGE) return;
 
   let formattedMessage = await formatMessage(message);
-  await buffer.enqueue(formattedMessage);
+  
   //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
@@ -214,7 +201,7 @@ client.on("messageCreate", async message => {
       //   await message.reply("I don't know what to say to that.");
       //   return;
       // }
-      var res = await llm.sendMessage(buffer, client);
+      var res = await llm.sendMessage(formattedMessage, client);
       // if ('result' in res) {
       //   new Logger().debug(`LLM MESSAGE RESPONSE: ${res.result.response}`);
 
@@ -237,6 +224,15 @@ client.on("messageCreate", async message => {
   }
 //}
 );
+
+async function formatMessage(message) {
+  let channel = message.channel; // The channel the command was executed
+  return {
+    "author": message.author.id,
+    "authorName": message.author.username,
+    "content": message.content
+  };
+}
 
 /**
  * Retrieves the message history for a given channel.
@@ -270,14 +266,6 @@ async function initGetMessageHistory(message, limit = 100) {
 }
 
 
-async function formatMessage(message) {
-  let channel = message.channel; // The channel the command was executed
-  return {
-    "author": message.author.id,
-    "authorName": message.author.username,
-    "content": message.content
-  };
-}
 
 
 /**
