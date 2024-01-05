@@ -6,22 +6,13 @@ import {
     MessageType
   }
     from 'discord.js';
-import dotenv from 'dotenv';
-import Keyv from 'keyv';
+import dotenv from 'dotenv'; dotenv.config();
 import Logger from "./utils/logger.js";
+import DatabaseFactory from './db/DatabaseFactory.js';
 
-dotenv.config();
-/**
- * Represents the Keyv instance for connecting to the SQLite database.
- * @type {Keyv}
- */
-const keyv = new Keyv('sqlite:///app/db/database.sqlite');
+const logger = new Logger();
+const db = DatabaseFactory.createDatabase();
 
-
-/**
- * Represents the Discord bot client.
- * @type {Client}
- */
 const client = new Client({
   intents: [
       GatewayIntentBits.Guilds,
@@ -45,6 +36,19 @@ client.login(process.env.DISCORD_BOT_TOKEN).catch(e => console.log(e));
  * @type {Array<Object>}
  */
 const commands = [
+  {
+    name: 'addserver',
+    description: 'Give Bot server access. Must be server ID',
+    dm_permission: false,
+    options: [
+      {
+        name: "server",
+        description: "The server to add. Must be channel ID",
+        type: 6,
+        required: true
+      }
+    ]
+  },
   {
     name: 'addchannel',
     description: 'Give Bot channel access. Must be channel ID',
@@ -103,11 +107,12 @@ const commands = [
 /**
  * Event handler for when the Discord bot client is ready.
  */
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}`);
   console.log('Connected to Discord Gateway');
   console.log(new Date())
   client.user.setStatus('online');
+  await db.addBot(client.user.id, client.user.tag);
 });
 
 /**
@@ -117,7 +122,9 @@ client.once('ready', () => {
  */
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
+  await db.addServer(interaction.guild.id, interaction.guild.name);
 
+  //TODO: fix permissions this is lame
   if (! await interaction.member.roles.cache.some(role => role.name === process.env.ADMIN_ROLE_NAME)) {
     await interaction.reply('You do not have the required role to use this command.');
     return
@@ -132,12 +139,13 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // Here is where you would add your logic for giving the bot chat permission in the channel
-    if(await keyv.get(channel.id)) {
+    let res = await db.queryChannel(channel.id);
+    if(res[0] === channel.id) {
       await interaction.reply({ content: 'Channel with that ID already exists in database.', ephemeral: true });
       return;
     }
-    await keyv.set(channel.id, client.user.id);
+    await db.addChannel(channel.id, channel.name, interaction.guild.id);
+    await db.botInteractionAllow(channel.id);
 
     await interaction.reply({ content: 'Added bot chat permission in', ephemeral: true });
 
@@ -152,28 +160,31 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    // Here is where you would add your logic for removing the bot chat permission in the channel
-    if(!await keyv.get(channel.id)) {
+    let res = await db.queryChannel(channel.id);
+    if(res.length === 0) {
       await interaction.reply({ content: 'Channel with that ID does not exist in database.', ephemeral: true });
       return;
     }
-    await keyv.delete(channel.id);
+    //await db.removeChannel(channel.id);
+    await db.botInteractionDeny(channel.id);
 
     await interaction.reply({ content: 'Removed bot chat permission in', ephemeral: true });
 
-    return
+    return;
   }
 
   if (commandName === 'dm') {
     await interaction.reply({ content: 'DMing you now!', ephemeral: true });
     const dmChannel = await interaction.user.createDM();
-    await keyv.set(dmChannel.id, client.user.id);
+    //TODO: fix the parameters are wrong
+    await db.addChannel(dmChannel.id, client.user.id);
+    await db.botInteractionAllow(client.user.id, dmChannel.id);
     await interaction.user.send('Hello!');
   }
 });
 
 
-const l = new llmFactory(keyv);
+const l = new llmFactory(db);
 const llm = l.new();
 
 
@@ -188,31 +199,25 @@ client.on("messageCreate", async message => {
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
-  if (!await keyv.get(message.channel.id)) return;
+  let isAllowed = await db.queryChannel(message.channel.id);
+  if (isAllowed.length === 0 || !isAllowed[0].isallowed) {
+    //logger.debug(`isAllowed: ${isAllowed[0]}`);
+    logger.warn(`Bot is not allowed in channel ${message.channel.id}`); return;
+  }
   if (message.content.startsWith(process.env.BOT_SHUTUP_PREFIX)) return;
   if (message.type == MessageType.SYSTEM_MESSAGE) return;
-
+  if (message.type == MessageType.ThreadStarterMessage) return;
+  await db.addUser(message.author.id, message.author.username);
   let formattedMessage = await formatMessage(message);
   
-  //if (process.env.DIRECT_MESSAGES !== "true" || message.channel.type != ChannelType.DM) {
     try {
       message.channel.sendTyping();
-      // if (result.response.choices[0].finish_reason == "function_call") {
-      //   await message.reply("I don't know what to say to that.");
-      //   return;
-      // }
-      var res = await llm.sendMessage(formattedMessage, client);
-      // if ('result' in res) {
-      //   new Logger().debug(`LLM MESSAGE RESPONSE: ${res.result.response}`);
 
-      //   let iterator = messageIterator(res.result.response);
-      //   for await (let chunk of iterator) {
-      //     await message.reply(chunk);
-      //   }
-      //   return;
-      // }
+      let res = await llm.sendMessage(formattedMessage, client);
 
-      new Logger().debug(`LLM MESSAGE RESPONSE: ${res}`);
+      db.insertMessage(message.author.id, client.user.id, message.channel.id, formattedMessage.content, res, '0', '0');
+      logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
+
       let iterator = messageIterator(res);
       for await (let chunk of iterator) {
         await message.reply(chunk);
@@ -222,7 +227,6 @@ client.on("messageCreate", async message => {
       console.error(e)
     }
   }
-//}
 );
 
 async function formatMessage(message) {

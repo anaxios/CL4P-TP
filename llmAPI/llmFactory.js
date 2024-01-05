@@ -6,20 +6,20 @@ import DefaultAPI from "./DefaultAPI.js";
 dotenv.config();
 
 export default class llmFactory {
-    constructor(keyv) {
+    constructor(db) {
         this.llm = process.env.LLM_SERVICE;
         this.logger = new Logger();
-        this.keyv = keyv;
+        this.db = db;
     }
     new () {
         this.logger.debug(`LLM API: ${this.llm}`);
 
         switch (this.llm) {
             case 'cloudflare':
-                return new CloudflareAPI(this.keyv);
+                return new CloudflareAPI(this.db);
                 break;
             default:
-                return new DefaultAPI(this.keyv);
+                return new DefaultAPI(this.db);
         }
     }
 }

@@ -1,5 +1,4 @@
 import { managerToFetchingStrategyOptions } from "discord.js";
-import Keyv from "keyv";
 import assert from "node:assert";
 import Logger from "./logger.js";
 import { Tiktoken } from "tiktoken/lite";
@@ -7,24 +6,24 @@ import cl100k_base from "tiktoken/encoders/cl100k_base.json" assert { type: 'jso
 
 
 export default class TokenBuffer {
-    constructor(keyv, capacity = 4096) {
+    constructor(db, capacity = 4096) {
       this.buffer = [];
       this.currentBufferSize = 0;
       this.capacity = capacity;
-      this.keyv = keyv;
+      this.db = db;
       this.encoding;
       this.totalTokens = 0;
       this.logger = new Logger();
     }
 
     async init() {
-        let messageHistory = await this.keyv.get('messageHistory');
-        let messageHistoryLength = await this.keyv.get('messageHistoryLength');
-        if (messageHistory) {
-            this.buffer = messageHistory;
-            this.currentBufferSize = messageHistoryLength;
-            this.logger.debug(`buffer length on load: ${this.currentBufferSize}`);
-        }
+        //let messageHistory = await this.db.get('messageHistory');
+        //let messageHistoryLength = await this.db.get('messageHistoryLength');
+        // if (messageHistory) {
+        //     this.buffer = [];//messageHistory;
+        //     this.currentBufferSize = 0//messageHistoryLength;
+        //     this.logger.debug(`buffer length on load: ${this.currentBufferSize}`);
+        // }
     }
   
     async enqueue(data) {
@@ -39,9 +38,9 @@ export default class TokenBuffer {
         this.currentBufferSize += itemByteSize;
         this.logger.debug(`current buffer size: ${this.currentBufferSize}`);
         this.buffer.push(data);
-        let messageHistory = await this.read();
-        await this.keyv.set('messageHistory', messageHistory);
-        await this.keyv.set('messageHistoryLength', this.currentBufferSize);
+        //let messageHistory = await this.read();
+        //await this.db.set('messageHistory', messageHistory);
+        //await this.db.set('messageHistoryLength', this.currentBufferSize);
     }
       
     async dequeue() {

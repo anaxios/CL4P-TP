@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import Logger from "../utils/logger.js";
 import TokenBuffer from '../utils/TokenBuffer.js';
@@ -7,9 +6,9 @@ import axios from 'axios';
 dotenv.config();
 
 export default class DefaultAPI {
-    constructor(keyv) {
+    constructor(db) {
         this.logger = new Logger();
-        this.buffer = new TokenBuffer(keyv, 8000);
+        this.buffer = new TokenBuffer(db, 8000);
         this.buffer.init();
     }
     async sendMessage(formattedMessage, client) {

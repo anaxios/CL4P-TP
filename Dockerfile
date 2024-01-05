@@ -6,6 +6,7 @@ COPY package*.json .
 
 RUN npm install
 
+COPY ./db /app/db
 COPY ./llmAPI /app/llmAPI 
 COPY ./utils /app/utils
 COPY client.js .

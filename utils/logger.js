@@ -18,8 +18,8 @@ export default class Logger {
     }
 
     log(logLevel, message) {
-        this.writeToDisk(`${logLevel}: ${message}`);
-        console.log(`${logLevel}: ${message}`);
+        this.writeToDisk(`${logLevel}: ${JSON.stringify(message)}`);
+        console.log(`${logLevel}: ${JSON.stringify(message)}`);
     }
 
     writeToDisk(message, filename = '/app/LOG') {

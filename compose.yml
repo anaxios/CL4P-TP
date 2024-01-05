@@ -1,12 +1,35 @@
 ---
 version: "3.5"
 services:
+  postgres: 
+    image: postgres:15
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/sql_schema.sh:/docker-entrypoint-initdb.d/sql_schema.sh
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  # chromadb:
+  #   image: chromadb/chroma
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env
+  #  #volumes:
+
   cl4p-tp:
-    image: ghcr.io/anaxios/cl4p-tp
-    container_name: cl4p-tp
+    #image: ghcr.io/anaxios/cl4p-tp:latest
+    build: .
     restart: unless-stopped
     env_file:
       - .env
     volumes:
-      - ./db:/app/db
+      - ./LOG:/app/LOG
 

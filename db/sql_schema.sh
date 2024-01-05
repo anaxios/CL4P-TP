@@ -6,9 +6,10 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 CREATE TABLE Users (
     UserID VARCHAR(255) PRIMARY KEY,
     UserName VARCHAR(255) NOT NULL,
-    UserValidationKey VARCHAR(255) UNIQUE NOT NULL,
+    UserValidationKey VARCHAR(255) UNIQUE,
     APIKey VARCHAR(255),
-    AIModelName VARCHAR(255)
+    AIModelName VARCHAR(255),
+    IsAllowed BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Bots (
@@ -18,14 +19,18 @@ CREATE TABLE Bots (
 
 CREATE TABLE Servers (
     ServerID VARCHAR(255) PRIMARY KEY,
-    ServerName VARCHAR(255) NOT NULL
+    ServerName VARCHAR(255) NOT NULL,
+    APIKey VARCHAR(255),
+    AIModelName VARCHAR(255),
+    IsAllowed BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE Channels (
     ChannelID VARCHAR(255) PRIMARY KEY,
     ChannelName VARCHAR(255) NOT NULL,
     ServerID VARCHAR(255),
-    FOREIGN KEY (ServerID) REFERENCES Servers(ServerID)
+    FOREIGN KEY (ServerID) REFERENCES Servers(ServerID),
+    IsAllowed BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE ChatLogs (
