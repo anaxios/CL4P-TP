@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 dotenv.config();
 
-export default class DefaultAPI {
+export default class TogetherAPI{
   constructor(db) {
     this.logger = new Logger();
     this.buffer = new TokenBuffer(db, 8000);
@@ -22,13 +22,13 @@ export default class DefaultAPI {
   async init() {
     try {
       this.collection = await this.cc.getCollection({
-        name: "test",
+        name: "test2",
         embeddingFunction: this.emb_fn, // embedding_function
       });
     } catch (e) {
       // if (this.collection === null) {
       this.collection = await this.cc.createCollection({
-        name: "test",
+        name: "test2",
         embeddingFunction: this.emb_fn,
       });
       // }
@@ -41,32 +41,29 @@ export default class DefaultAPI {
     try {
       //await this.buffer.enqueue(formattedMessage);
       const context = await this.collection.query({
-        nResults: 50, // n_results
+        nResults: 10, // n_results
         queryTexts: [content], // query_text
         embeddingFunction: this.emb_fn, // embedding_function
       });
-      this.logger.debug(`LLM API CONTEXT: ${context.documents.join(" ")}`);
+      //this.logger.debug(`LLM API CONTEXT: ${context.documents.join(" ")}`);
       let llmMessage = await this.messageBuilder({
         message: content,
         context: context.documents.join(" "),
       });
-      const response = await axios.post(
-        `https://proxy-server-l6vsfbzhba-uw.a.run.app/complete`,
-        llmMessage,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = response.data;
-      await this.collection.add({
-        ids: [uuidv4()],
-        documents: [content + " " + data],
-        embeddingFunction: this.emb_fn, // embedding_function
+      const response = await axios.post(process.env.API_ENDPOINT, llmMessage, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.API_KEY}`,
+        },
       });
-      //new Logger().debug(`LLM API RESPONSE: ${data}`);
-      return data;
+      const data = response.data;
+      // await this.collection.add({
+      //   ids: [uuidv4()],
+      //   documents: [content + " " + data.choices[0].message.content],
+      //   embeddingFunction: this.emb_fn, // embedding_function
+      // });
+      //this.logger.debug(`LLM API RESPONSE: ${data}`);
+      return data.choices[0].message.content;
     } catch (error) {
       console.log(error);
     }
@@ -80,7 +77,7 @@ export default class DefaultAPI {
   async messageBuilder(messages) {
     const { message, context } = messages;
     return {
-      model: `gpt-4`,
+      model: `${process.env.MODEL_NAME}`,
       // "functions": [{
       //     "name": "get_current_weather",
       //     "description": "Get the current weather in a given location",

@@ -1,27 +1,31 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import Logger from "../utils/logger.js";
 import CloudflareAPI from "./CloudflareAPI.js";
 import DefaultAPI from "./DefaultAPI.js";
+import TogetherAPI from "./TogetherAPI.js";
 
 dotenv.config();
 
 export default class llmFactory {
-    constructor(db) {
-        this.llm = process.env.LLM_SERVICE;
-        this.logger = new Logger();
-        this.db = db;
-    }
-    new () {
-        this.logger.debug(`LLM API: ${this.llm}`);
+  constructor(db) {
+    this.llm = process.env.LLM_SERVICE;
+    this.logger = new Logger();
+    this.db = db;
+  }
+  new() {
+    this.logger.debug(`LLM API: ${this.llm}`);
 
-        switch (this.llm) {
-            case 'cloudflare':
-                return new CloudflareAPI(this.db);
-                break;
-            default:
-                return new DefaultAPI(this.db);
-        }
+    switch (this.llm) {
+      case "cloudflare":
+        return new CloudflareAPI(this.db);
+        break;
+      case "togetherai":
+        return new TogetherAPI(this.db);
+        break;
+      default:
+        return new DefaultAPI(this.db);
     }
+  }
 }
 
 //     async sendMessage(buffer, client) {
@@ -89,5 +93,3 @@ export default class llmFactory {
 //             }
 //         }
 // }
-
-

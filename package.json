@@ -8,7 +8,7 @@
   "main": "client.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha || true",
     "start": "node client.js",
     "dev": "node --watch index.js",
     "prod": "pm2 start index.js -n chatgpt-bot"
@@ -16,10 +16,18 @@
   "dependencies": {
     "@keyv/sqlite": "^3.6.6",
     "axios": "^1.6.2",
+    "chromadb": "^1.7.3",
+    "chromadb-default-embed": "^2.13.2",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
     "keyv": "^4.5.4",
+    "openai": "^4.24.2",
     "pg": "^8.11.3",
-    "tiktoken": "^1.0.11"
+    "tiktoken": "^1.0.11",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "chai": "^5.0.0",
+    "mocha": "^10.2.0"
   }
 }

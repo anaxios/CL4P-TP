@@ -17,12 +17,15 @@ services:
     ports:
       - 8080:8080
 
-  # chromadb:
-  #   image: chromadb/chroma
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #  #volumes:
+  chromadb:
+    image: chromadb/chroma
+    container_name: chromadb
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+   #volumes:
 
   cl4p-tp:
     #image: ghcr.io/anaxios/cl4p-tp:latest
@@ -32,4 +35,7 @@ services:
       - .env
     volumes:
       - ./LOG:/app/LOG
+    depends_on:
+      - postgres
+      - chromadb
 
