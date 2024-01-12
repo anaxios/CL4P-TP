@@ -25,7 +25,8 @@ services:
       - 8000:8000
     env_file:
       - .env
-   #volumes:
+    volumes:
+      - ./chromadb/:/chroma/chroma
 
   cl4p-tp:
     #image: ghcr.io/anaxios/cl4p-tp:latest

@@ -235,6 +235,17 @@ client.on("messageCreate", async (message) => {
   if (message.type == MessageType.SYSTEM_MESSAGE) return;
   if (message.type == MessageType.ThreadStarterMessage) return;
   await db.addUser(message.author.id, message.author.username);
+
+  // Check if the message has attachments
+  if (message.attachments.size > 0) {
+    message.attachments.forEach(async (attachment) => {
+      let atreply = await llm.storeAttachment(attachment);
+      message.reply(`${atreply}`);
+    });
+    message.reply(`Embedding started.`);
+    return;
+  }
+
   let formattedMessage = await formatMessage(message);
 
   try {

@@ -4,10 +4,11 @@ import TokenBuffer from "../utils/TokenBuffer.js";
 import axios from "axios";
 import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
 import { v4 as uuidv4 } from "uuid";
+import CryptoJS from "crypto-js";
 
 dotenv.config();
 
-export default class TogetherAPI{
+export default class TogetherAPI {
   constructor(db) {
     this.logger = new Logger();
     this.buffer = new TokenBuffer(db, 8000);
@@ -37,15 +38,15 @@ export default class TogetherAPI{
 
   async sendMessage(message) {
     const { content } = message;
-    // await this.init();
+
     try {
       //await this.buffer.enqueue(formattedMessage);
       const context = await this.collection.query({
-        nResults: 10, // n_results
+        nResults: 20, // n_results
         queryTexts: [content], // query_text
         embeddingFunction: this.emb_fn, // embedding_function
       });
-      //this.logger.debug(`LLM API CONTEXT: ${context.documents.join(" ")}`);
+      this.logger.debug(`LLM API CONTEXT: ${context.documents.join(" ")}`);
       let llmMessage = await this.messageBuilder({
         message: content,
         context: context.documents.join(" "),
@@ -53,7 +54,7 @@ export default class TogetherAPI{
       const response = await axios.post(process.env.API_ENDPOINT, llmMessage, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.API_KEY}`,
+          Authorization: `Bearer ${process.env.API_KEY}`,
         },
       });
       const data = response.data;
@@ -69,6 +70,41 @@ export default class TogetherAPI{
     }
   }
 
+  async storeAttachment(attachment) {
+    console.log(`store attachments: ${attachment.name}`);
+    if (attachment.name.endsWith(".txt")) {
+      const response = await axios.get(attachment.url, {
+        responseType: "text",
+      });
+
+      const data = response.data.split(/\n\s*\n/);
+
+      data.forEach(async (element) => {
+        await this.addWithRetry(element);
+      });
+      return "Embedding finished.";
+    }
+  }
+
+  async addWithRetry(element, retries = 30, delay = 200000) {
+    try {
+      let hash = CryptoJS.SHA256(element).toString(CryptoJS.enc.Hex);
+
+      await this.collection.add({
+        ids: [hash],
+        documents: [element],
+        embeddingFunction: this.emb_fn, // embedding_function
+      });
+    } catch (error) {
+      if (retries <= 0) {
+        throw new Error("No more retries left");
+      }
+      // Wait for 'delay' milliseconds before retrying
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return this.addWithRetry(element, retries - 1, delay);
+    }
+  }
+
   /**
    * Builds the message object for the FreeTrialAPI.
    * @param {Array<Object>} messageHistory - The message history.
@@ -78,6 +114,8 @@ export default class TogetherAPI{
     const { message, context } = messages;
     return {
       model: `${process.env.MODEL_NAME}`,
+      max_tokens: 1024,
+      temperature: 0.1,
       // "functions": [{
       //     "name": "get_current_weather",
       //     "description": "Get the current weather in a given location",
@@ -101,12 +139,12 @@ export default class TogetherAPI{
       messages: [
         {
           role: "system",
-          content: `${process.env.SYSTEM_MESSAGE}`,
+          content: `${process.env.SYSTEM_MESSAGE} Context: ${context}`,
         },
-        {
-          role: "assistant",
-          content: `Context: ${context}`,
-        },
+        // {
+        //   role: "assistant",
+        //   content: `Context: ${context}`,
+        // },
         {
           role: "user",
           content: `${message}`,

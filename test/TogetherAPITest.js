@@ -6,6 +6,8 @@ import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
 
 const formatted = {
   model: process.env.MODEL_NAME,
+  max_tokens: 1024,
+  temperature: 0.1,
   messages: [
     {
       role: "system",
