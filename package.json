@@ -10,17 +10,21 @@
   "scripts": {
     "test": "mocha || true",
     "start": "node client.js",
-    "dev": "node --watch index.js",
+    "dev": "node --watch client.js",
     "prod": "pm2 start index.js -n chatgpt-bot"
   },
   "dependencies": {
+    "@hono/node-server": "^1.4.0",
     "@libsql/client": "^0.4.0-pre.7",
+    "@types/better-sqlite3": "^7.6.8",
     "axios": "^1.6.2",
+    "better-sqlite3": "^9.3.0",
     "chromadb": "^1.7.3",
     "crypto-js": "4.2.0",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
     "drizzle-orm": "^0.29.3",
+    "hono": "^3.12.5",
     "openai": "^4.24.2",
     "pg": "^8.11.3",
     "tiktoken": "^1.0.11",

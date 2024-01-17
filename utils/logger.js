@@ -18,7 +18,7 @@ export default class Logger {
     }
 
     log(logLevel, message) {
-        this.writeToDisk(`${logLevel}: ${JSON.stringify(message)}`);
+        // this.writeToDisk(`${logLevel}: ${JSON.stringify(message)}`);
         console.log(`${logLevel}: ${JSON.stringify(message)}`);
     }
 

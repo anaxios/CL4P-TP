@@ -12,10 +12,26 @@ import {
 import dotenv from "dotenv";
 dotenv.config();
 import Logger from "./utils/logger.js";
-import DatabaseFactory from "./db/DatabaseFactory.js";
+// import DatabaseFactory from "./db/DatabaseFactory.js";
+import { serve } from '@hono/node-server';
+import { Hono } from "hono";
+
+import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
+const drizzleClient = createClient({ url: process.env.DATABASE_URL, authToken: process.env.DATABASE_AUTH_TOKEN });
+const db = drizzle(drizzleClient);
+
+import { sql } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { eq, ne, gt, gte } from "drizzle-orm";
+
+const channels = sqliteTable('channels', {
+  id: text('id').primaryKey(),
+});
+
 
 const logger = new Logger();
-const db = DatabaseFactory.createDatabase();
+// const db = DatabaseFactory.createDatabase();
 
 const client = new Client({
   intents: [
@@ -117,7 +133,7 @@ client.once("ready", async () => {
   console.log("Connected to Discord Gateway");
   console.log(new Date());
   client.user.setStatus("online");
-  await db.addBot(client.user.id, client.user.tag);
+  // await db.addBot(client.user.id, client.user.tag);
 });
 
 /**
@@ -127,7 +143,7 @@ client.once("ready", async () => {
  */
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
-  await db.addServer(interaction.guild.id, interaction.guild.name);
+  // await db.addServer(interaction.guild.id, interaction.guild.name);
 
   //TODO: fix permissions this is lame
   if (
@@ -153,7 +169,7 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    let res = await db.queryChannel(channel.id);
+    let res = await db.select().from(channels).where(eq(channels.id, channel.id));
     if (res[0] === channel.id) {
       await interaction.reply({
         content: "Channel with that ID already exists in database.",
@@ -161,8 +177,8 @@ client.on("interactionCreate", async (interaction) => {
       });
       return;
     }
-    await db.addChannel(channel.id, channel.name, interaction.guild.id);
-    await db.botInteractionAllow(channel.id);
+    await db.insert(channels).values({ id: channel.id });
+    
 
     await interaction.reply({
       content: "Added bot chat permission in",
@@ -182,7 +198,7 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    let res = await db.queryChannel(channel.id);
+    let res = await db.select().from(channels).where(eq(channels.id, channel.id));
     if (res.length === 0) {
       await interaction.reply({
         content: "Channel with that ID does not exist in database.",
@@ -191,7 +207,7 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
     //await db.removeChannel(channel.id);
-    await db.botInteractionDeny(channel.id);
+    await db.delete(channels).where(eq(channels.id, channel.id));
 
     await interaction.reply({
       content: "Removed bot chat permission in",
@@ -205,8 +221,8 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply({ content: "DMing you now!", ephemeral: true });
     const dmChannel = await interaction.user.createDM();
     //TODO: fix the parameters are wrong
-    await db.addChannel(dmChannel.id, client.user.id);
-    await db.botInteractionAllow(client.user.id, dmChannel.id);
+    await db.insert(channels).values({ id: dmChannel.id });
+
     await interaction.user.send("Hello!");
   }
 });
@@ -225,8 +241,9 @@ client.on("messageCreate", async (message) => {
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
-  let isAllowed = await db.queryChannel(message.channel.id);
-  if (isAllowed.length === 0 || !isAllowed[0].isallowed) {
+  let isAllowed = await db.select().from(channels).where(eq(channels.id, message.channel.id));
+  logger.debug(`isAllowed: ${JSON.stringify(isAllowed)}`);
+  if (isAllowed[0]?.id !== message.channel.id) {
     //logger.debug(`isAllowed: ${isAllowed[0]}`);
     logger.warn(`Bot is not allowed in channel ${message.channel.id}`);
     return;
@@ -234,7 +251,7 @@ client.on("messageCreate", async (message) => {
   if (message.content.startsWith(process.env.BOT_SHUTUP_PREFIX)) return;
   if (message.type == MessageType.SYSTEM_MESSAGE) return;
   if (message.type == MessageType.ThreadStarterMessage) return;
-  await db.addUser(message.author.id, message.author.username);
+  // await db.addUser(message.author.id, message.author.username);
 
   // Check if the message has attachments
   if (message.attachments.size > 0) {
@@ -253,15 +270,15 @@ client.on("messageCreate", async (message) => {
 
     let res = await llm.sendMessage(formattedMessage, client);
 
-    db.insertMessage(
-      message.author.id,
-      client.user.id,
-      message.channel.id,
-      formattedMessage.content,
-      res,
-      "0",
-      "0"
-    );
+    // db.insertMessage(
+    //   message.author.id,
+    //   client.user.id,
+    //   message.channel.id,
+    //   formattedMessage.content,
+    //   res,
+    //   "0",
+    //   "0"
+    // );
     logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
 
     let iterator = messageIterator(res);
@@ -332,3 +349,13 @@ async function* messageIterator(arr, chunkSize = 2000) {
     index += chunkSize;
   }
 }
+
+const hono = new Hono();
+hono.get('/status', (c) => {
+  return c.text('OK');
+});
+
+serve({
+  fetch: hono.fetch,
+  port: 7860,
+});
