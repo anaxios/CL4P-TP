@@ -1,7 +1,7 @@
 ---
 version: "3.5"
 services:
-  postgres: 
+  postgres:
     image: postgres:15
     restart: unless-stopped
     env_file:
@@ -17,16 +17,16 @@ services:
     ports:
       - 8080:8080
 
-  chromadb:
-    image: chromadb/chroma
-    container_name: chromadb
-    restart: unless-stopped
-    ports:
-      - 8000:8000
-    env_file:
-      - .env
-    volumes:
-      - ./chromadb/:/chroma/chroma
+  # chromadb:
+  #   image: chromadb/chroma
+  #   container_name: chromadb
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8000:8000
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./chromadb/:/chroma/chroma
 
   cl4p-tp:
     #image: ghcr.io/anaxios/cl4p-tp:latest
@@ -38,5 +38,4 @@ services:
       - ./LOG:/app/LOG
     depends_on:
       - postgres
-      - chromadb
-
+      # - chromadb

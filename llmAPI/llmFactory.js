@@ -3,6 +3,7 @@ import Logger from "../utils/logger.js";
 import CloudflareAPI from "./CloudflareAPI.js";
 import DefaultAPI from "./DefaultAPI.js";
 import TogetherAPI from "./TogetherAPI.js";
+import j3nkn5API from "./j3nkn5API.js";
 
 dotenv.config();
 
@@ -21,6 +22,9 @@ export default class llmFactory {
         break;
       case "togetherai":
         return new TogetherAPI(this.db);
+        break;
+      case "j3nkn5":
+        return new j3nkn5API(this.db);
         break;
       default:
         return new DefaultAPI(this.db);
