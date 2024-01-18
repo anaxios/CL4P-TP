@@ -19,7 +19,7 @@ primary_region = "den"
 [[vm]]
   cpu_kind = "shared"
   cpus = 1
-  memory_mb = 512
+  memory_mb = 256
 
 [env]
   API_ENDPOINT         = "https://api.j3nkn5.cc/"
