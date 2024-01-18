@@ -1,12 +1,12 @@
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
+// dotenv.config();
 import Logger from "../utils/logger.js";
-import TokenBuffer from "../utils/TokenBuffer.js";
-import axios from "axios";
-import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
-import { v4 as uuidv4 } from "uuid";
-import CryptoJS from "crypto-js";
+// import TokenBuffer from "../utils/TokenBuffer.js";
+// import axios from "axios";
+// import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb";
+// import { v4 as uuidv4 } from "uuid";
+// import CryptoJS from "crypto-js";
 
-dotenv.config();
 
 export default class j3nkn5API {
   constructor(db) {
@@ -25,16 +25,17 @@ export default class j3nkn5API {
     const { content } = message;
 
     try {
-      const response = await axios.get(process.env.API_ENDPOINT, {
-        params: {
-          q: content,
-        },
+      const url = new URL(process.env.API_ENDPOINT); 
+      url.searchParams.set("q", content);
+      const request = new Request(url, {
+		    method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.API_KEY}`,
-        },
-      });
-      return response.data;
+          "Content-Type": "application/text",
+          "Authorization": `Bearer ${process.env.API_KEY}`,
+      }});
+
+      const response = await fetch(request);
+      return await response.text();
     } catch (error) {
       console.log(error);
     }
