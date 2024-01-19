@@ -26,7 +26,10 @@ export default class j3nkn5API {
 
     try {
       const url = new URL(process.env.API_ENDPOINT); 
-      url.searchParams.set("q", content);
+      url.searchParams.set("query", content);
+      url.searchParams.set("llm", "true");
+      url.searchParams.set("vectors", "true");
+      console.log(url.toString());
       const request = new Request(url, {
 		    method: 'GET',
         headers: {
@@ -35,7 +38,12 @@ export default class j3nkn5API {
       }});
 
       const response = await fetch(request);
-      return await response.text();
+
+      if (!response.ok) {
+        return new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.log(error);
     }

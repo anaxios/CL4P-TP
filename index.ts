@@ -9,6 +9,7 @@ import {
   ActivityType,
   ChannelType,
   MessageType,
+  EmbedBuilder
 } from "discord.js";
 // import dotenv from "dotenv";
 // dotenv.config();
@@ -131,10 +132,10 @@ const commands = [
  * Event handler for when the Discord bot client is ready.
  */
 client.once("ready", async () => {
-  console.log(`Logged in as ${client.user.tag}`);
+  console.log(`Logged in as ${client.user?.tag}`);
   console.log("Connected to Discord Gateway");
   console.log(new Date());
-  client.user.setStatus("online");
+  client.user?.setStatus("online");
   // await db.addBot(client.user.id, client.user.tag);
 });
 
@@ -270,21 +271,28 @@ client.on("messageCreate", async (message) => {
 
     let res = await llm.sendMessage(formattedMessage, client);
 
-    // db.insertMessage(
-    //   message.author.id,
-    //   client.user.id,
-    //   message.channel.id,
-    //   formattedMessage.content,
-    //   res,
-    //   "0",
-    //   "0"
-    // );
-    logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
+    let vectors = [];
+    for (let chunk of res?.vector) {
+      vectors.push(`SOURCE: ${chunk.metadata.filename}\nTEXT: ${chunk.pageContent}`);
 
-    let iterator = messageIterator(res);
-    for await (let chunk of iterator) {
-      await message.reply(chunk);
     }
+
+    
+    
+    logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
+    
+    
+    
+    let iterator = messageIterator(`ANSWER: ${res?.query}\n\n` + vectors.join('\n\n'), 4096);
+    for await (let chunk of iterator) {
+      const embed = new EmbedBuilder()
+      //.setTitle('ANSWER')
+      .setDescription(chunk)
+      await message.channel.send({ embeds: [embed] });
+        //.addFields();
+    //   await message.reply(chunk);
+    }
+    
   } catch (e) {
     console.error(e);
   }
