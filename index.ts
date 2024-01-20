@@ -9,7 +9,8 @@ import {
   ActivityType,
   ChannelType,
   MessageType,
-  EmbedBuilder
+  EmbedBuilder,
+  EmojiIdentifierResolvable,
 } from "discord.js";
 // import dotenv from "dotenv";
 // dotenv.config();
@@ -18,20 +19,27 @@ import Logger from "./src/utils/logger.js";
 //import { serve } from '@hono/node-server';
 import { Hono } from "hono";
 
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
-const drizzleClient = createClient({ url: process.env.DATABASE_URL, authToken: process.env.DATABASE_AUTH_TOKEN });
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+const drizzleClient = createClient({
+  url: process.env.DATABASE_URL,
+  authToken: process.env.DATABASE_AUTH_TOKEN,
+});
 const db = drizzle(drizzleClient);
 
 import { sql } from "drizzle-orm";
 import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 import { eq, ne, gt, gte } from "drizzle-orm";
 import { appendFile } from "fs";
+import emojiAPI from "./src/emojiAPI";
 
-const channels = sqliteTable('channels', {
-  id: text('id').primaryKey(),
+const channels = sqliteTable("channels", {
+  id: text("id").primaryKey(),
 });
 
+const emojis = sqliteTable("emoji", {
+  id: text("id").primaryKey(),
+});
 
 const logger = new Logger();
 // const db = DatabaseFactory.createDatabase();
@@ -60,21 +68,34 @@ client.login(process.env.DISCORD_BOT_TOKEN).catch((e) => console.log(e));
  */
 const commands = [
   {
-    name: "addserver",
-    description: "Give Bot server access. Must be server ID",
+    name: "addemoji",
+    description: "Give Bot channel access. Must be channel ID",
     dm_permission: false,
     options: [
       {
-        name: "server",
-        description: "The server to add. Must be channel ID",
-        type: 6,
+        name: "channel",
+        description: "The channel to add. Must be channel ID",
+        type: 7,
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "removeemoji",
+    description: "remove Bot emoji access. Must be channel ID",
+    dm_permission: false,
+    options: [
+      {
+        name: "channel",
+        description: "The channel to add. Must be channel ID",
+        type: 7,
         required: true,
       },
     ],
   },
   {
     name: "addchannel",
-    description: "Give Bot channel access. Must be channel ID",
+    description: "Give Bot emoji access. Must be channel ID",
     dm_permission: false,
     options: [
       {
@@ -162,6 +183,63 @@ client.on("interactionCreate", async (interaction) => {
 
   const { commandName } = interaction;
 
+  if (commandName === "addemoji") {
+    let channel = interaction.options.getChannel("channel");
+    if (!channel) {
+      await interaction.reply({
+        content: "No channel found with that ID!",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
+    if (res[0] === channel.id) {
+      await interaction.reply({
+        content: "Channel with that ID already exists in database.",
+        ephemeral: true,
+      });
+      return;
+    }
+    await db.insert(emojis).values({ id: channel.id });
+
+    await interaction.reply({
+      content: "Added bot emoji permission in",
+      ephemeral: true,
+    });
+
+    return;
+  }
+
+  if (commandName === "removeemoji") {
+    let channel = interaction.options.getChannel("channel");
+    if (!channel) {
+      await interaction.reply({
+        content: "No channel found with that ID!",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
+    if (res.length === 0) {
+      await interaction.reply({
+        content: "Channel with that ID does not exist in database.",
+        ephemeral: true,
+      });
+      return;
+    }
+    //await db.removeChannel(channel.id);
+    await db.delete(emojis).where(eq(emojis.id, channel.id));
+
+    await interaction.reply({
+      content: "Removed bot emoji permission in",
+      ephemeral: true,
+    });
+
+    return;
+  }
+
   if (commandName === "addchannel") {
     let channel = interaction.options.getChannel("channel");
     if (!channel) {
@@ -172,7 +250,10 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    let res = await db.select().from(channels).where(eq(channels.id, channel.id));
+    let res = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.id, channel.id));
     if (res[0] === channel.id) {
       await interaction.reply({
         content: "Channel with that ID already exists in database.",
@@ -181,7 +262,6 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
     await db.insert(channels).values({ id: channel.id });
-    
 
     await interaction.reply({
       content: "Added bot chat permission in",
@@ -201,7 +281,10 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    let res = await db.select().from(channels).where(eq(channels.id, channel.id));
+    let res = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.id, channel.id));
     if (res.length === 0) {
       await interaction.reply({
         content: "Channel with that ID does not exist in database.",
@@ -242,7 +325,10 @@ client.on("messageCreate", async (message) => {
 
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
-  let isAllowed = await db.select().from(channels).where(eq(channels.id, message.channel.id));
+  let isAllowed = await db
+    .select()
+    .from(channels)
+    .where(eq(channels.id, message.channel.id));
   logger.debug(`isAllowed: ${JSON.stringify(isAllowed)}`);
   if (isAllowed[0]?.id !== message.channel.id) {
     //logger.debug(`isAllowed: ${isAllowed[0]}`);
@@ -273,26 +359,42 @@ client.on("messageCreate", async (message) => {
 
     let vectors = [];
     for (let chunk of res?.vector) {
-      vectors.push(`SOURCE: ${chunk.metadata.filename}\nTEXT: ${chunk.pageContent}`);
-
+      vectors.push(
+        `SOURCE: ${chunk.metadata.filename}\nTEXT: ${chunk.pageContent}`
+      );
     }
 
-    
-    
     logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
-    
-    
-    
-    let iterator = messageIterator(`ANSWER: ${res?.query}\n\n` + vectors.join('\n\n'), 4096);
+
+    // ########################################################################
+    let emojiIsAllowed = await db
+      .select()
+      .from(emojis)
+      .where(eq(emojis.id, message.channel.id));
+
+    if (emojiIsAllowed[0]?.id === message.channel.id) {
+      logger.debug(`emoji is allowed: ${JSON.stringify(emojiIsAllowed)}`);
+
+      const emojiGetter: EmojiAPI = new emojiAPI();
+      const emoji = await emojiGetter.send(message);
+      emoji.forEach((element: EmojiIdentifierResolvable) => {
+        message.react(element);
+      });
+    }
+    // ########################################################################
+
+    let iterator = messageIterator(
+      `ANSWER: ${res?.query}\n\n` + vectors.join("\n\n"),
+      4096
+    );
     for await (let chunk of iterator) {
       const embed = new EmbedBuilder()
-      //.setTitle('ANSWER')
-      .setDescription(chunk)
+        //.setTitle('ANSWER')
+        .setDescription(chunk);
       await message.channel.send({ embeds: [embed] });
-        //.addFields();
-    //   await message.reply(chunk);
+      //.addFields();
+      //   await message.reply(chunk);
     }
-    
   } catch (e) {
     console.error(e);
   }
@@ -359,11 +461,11 @@ async function* messageIterator(arr, chunkSize = 2000) {
 }
 
 const hono = new Hono();
-hono.get('/status', (c) => {
-  return c.text('OK');
+hono.get("/status", (c) => {
+  return c.text("OK");
 });
 
-export default ({
+export default {
   fetch: hono.fetch,
   port: 7860,
-});
+};
