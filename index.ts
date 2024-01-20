@@ -93,6 +93,32 @@ const commands = [
     ],
   },
   {
+    name: "addemoji",
+    description: "Give Bot emoji access. Must be channel ID",
+    dm_permission: false,
+    options: [
+      {
+        name: "channel",
+        description: "The channel to add. Must be channel ID",
+        type: 7,
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "removeemoji",
+    description: "Give Bot emoji access",
+    dm_permission: false,
+    options: [
+      {
+        name: "channel",
+        description: "The channel to add",
+        type: 7,
+        required: true,
+      },
+    ],
+  },
+  {
     name: "addchannel",
     description: "Give Bot emoji access. Must be channel ID",
     dm_permission: false,
