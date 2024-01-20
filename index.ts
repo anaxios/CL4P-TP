@@ -10,7 +10,6 @@ import {
   ChannelType,
   MessageType,
   EmbedBuilder,
-  EmojiIdentifierResolvable,
 } from "discord.js";
 // import dotenv from "dotenv";
 // dotenv.config();
@@ -37,7 +36,7 @@ const channels = sqliteTable("channels", {
   id: text("id").primaryKey(),
 });
 
-const emojis = sqliteTable("emoji", {
+const emojis = sqliteTable("emojis", {
   id: text("id").primaryKey(),
 });
 
@@ -315,30 +314,33 @@ client.on("interactionCreate", async (interaction) => {
 
 const llm = new j3nkn5API(db);
 
-/**
- * Event handler for when a message is created.
- * @param {Message} message - The message object representing the created message.
- * @returns {Promise<void>}
- */
 client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+  //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
+
   // ########################################################################
   let emojiIsAllowed = await db
     .select()
     .from(emojis)
     .where(eq(emojis.id, message.channel.id));
 
-  if (emojiIsAllowed[0]?.id === message.channel.id) {
-    logger.debug(`emoji is allowed: ${JSON.stringify(emojiIsAllowed)}`);
-
-    const emojiGetter: EmojiAPI = new emojiAPI();
-    const emoji = await emojiGetter.send(message);
+  if (emojiIsAllowed[0]?.id !== message.channel.id) {
+    logger.debug(`emoji is not allowed: ${JSON.stringify(emojiIsAllowed)}`);
+    return;
+  }
+  const emojiGetter: EmojiAPI = new emojiAPI();
+  const emoji = await emojiGetter.send(message);
+  if (emoji?.length !== 0) {
     emoji.forEach((element: EmojiIdentifierResolvable) => {
       message.react(element);
     });
   }
   // ########################################################################
+});
+
+client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
+
   let isAllowed = await db
     .select()
     .from(channels)

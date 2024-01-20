@@ -3,6 +3,9 @@ import Logger from "./utils/logger";
 export type EmojiAPI = InstanceType<typeof emojiAPI>;
 
 export default class emojiAPI {
+  withEmoji: any;
+  logger: Logger;
+
   constructor() {
     this.logger = new Logger();
     this.withEmoji = /\p{Extended_Pictographic}/u;
@@ -12,14 +15,14 @@ export default class emojiAPI {
     return;
   }
 
-  async send(message) {
+  async send(message: object) {
     const { content } = message;
 
     try {
       const url = new URL("https://api.j3nkn5.cc/emoji");
       url.searchParams.set("query", content);
       url.searchParams.set("temp", "0.5");
-      url.searchParams.set("model", "upstage/SOLAR-0-70b-16bit");
+      url.searchParams.set("model", "togethercomputer/llama-2-70b-chat"); // upstage/SOLAR-0-70b-16bit
       console.log(url.toString());
       const request = new Request(url, {
         method: "GET",
@@ -41,7 +44,7 @@ export default class emojiAPI {
     }
   }
 
-  testEmoji(message) {
+  testEmoji(message: string) {
     const result = Array.from(message).filter((emoji) =>
       this.withEmoji.test(emoji)
     );
