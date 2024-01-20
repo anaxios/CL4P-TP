@@ -321,8 +321,22 @@ const llm = new j3nkn5API(db);
  * @returns {Promise<void>}
  */
 client.on("messageCreate", async (message) => {
-  //let messageHistory = await initGetMessageHistory(message, process.env.MESSAGE_HISTORY_LIMIT);
+  // ########################################################################
+  let emojiIsAllowed = await db
+    .select()
+    .from(emojis)
+    .where(eq(emojis.id, message.channel.id));
 
+  if (emojiIsAllowed[0]?.id === message.channel.id) {
+    logger.debug(`emoji is allowed: ${JSON.stringify(emojiIsAllowed)}`);
+
+    const emojiGetter: EmojiAPI = new emojiAPI();
+    const emoji = await emojiGetter.send(message);
+    emoji.forEach((element: EmojiIdentifierResolvable) => {
+      message.react(element);
+    });
+  }
+  // ########################################################################
   if (message.author.bot) return;
   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
   let isAllowed = await db
@@ -365,23 +379,6 @@ client.on("messageCreate", async (message) => {
     }
 
     logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
-
-    // ########################################################################
-    let emojiIsAllowed = await db
-      .select()
-      .from(emojis)
-      .where(eq(emojis.id, message.channel.id));
-
-    if (emojiIsAllowed[0]?.id === message.channel.id) {
-      logger.debug(`emoji is allowed: ${JSON.stringify(emojiIsAllowed)}`);
-
-      const emojiGetter: EmojiAPI = new emojiAPI();
-      const emoji = await emojiGetter.send(message);
-      emoji.forEach((element: EmojiIdentifierResolvable) => {
-        message.react(element);
-      });
-    }
-    // ########################################################################
 
     let iterator = messageIterator(
       `ANSWER: ${res?.query}\n\n` + vectors.join("\n\n"),
