@@ -6,8 +6,8 @@ import {
   Partials,
   GatewayIntentBits,
   Routes,
-  ActivityType,
-  ChannelType,
+  Collection,
+  Events,
   MessageType,
   EmbedBuilder,
 } from "discord.js";
@@ -20,17 +20,18 @@ import { Hono } from "hono";
 
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+import { sql } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { eq, ne, gt, gte } from "drizzle-orm";
+import fs from "node:fs";
+import path from "node:path";
+import emojiAPI from "./src/emojiAPI";
+
 const drizzleClient = createClient({
   url: process.env.DATABASE_URL,
   authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 const db = drizzle(drizzleClient);
-
-import { sql } from "drizzle-orm";
-import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
-import { eq, ne, gt, gte } from "drizzle-orm";
-import { appendFile } from "fs";
-import emojiAPI from "./src/emojiAPI";
 
 const channels = sqliteTable("channels", {
   id: text("id").primaryKey(),
@@ -55,101 +56,49 @@ const client = new Client({
   partials: [Partials.Channel],
 });
 
+// add commands to client to access in other files
+client.commands = new Collection();
+
+// Read all command files from the commands directory
+const foldersPath = path.join("./src/commands");
+const commandFolders = fs.readdirSync(foldersPath);
+
+const loadCommands = async () => {
+  for (const folder of commandFolders) {
+    const commandsPath = path.join(foldersPath, folder);
+    const commandFiles = fs
+      .readdirSync(commandsPath)
+      .filter((file) => file.endsWith(".ts"));
+    for (const file of commandFiles) {
+      const filePath = path.join(commandsPath, file);
+      console.log(`Loading command at ${filePath}`);
+      try {
+        const command = await import(path.resolve(filePath));
+        // Set a new item in the Collection with the key as the command name and the value as the exported module
+        if ("data" in command && "execute" in command) {
+          client.commands.set(command.data.name, command);
+          console.log(`Loaded command ${command.data}`);
+        } else {
+          console.log(
+            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+};
+
 /**
  * Logs in the Discord bot client using the provided token.
  * @returns {Promise<void>}
  */
 client.login(process.env.DISCORD_BOT_TOKEN).catch((e) => console.log(e));
 
-/**
- * Represents the slash commands for the Discord bot.
- * @type {Array<Object>}
- */
-const commands = [
-  {
-    name: "addemoji",
-    description: "Give Bot channel access. Must be channel ID",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add. Must be channel ID",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "removeemoji",
-    description: "remove Bot emoji access. Must be channel ID",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add. Must be channel ID",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "addemoji",
-    description: "Give Bot emoji access. Must be channel ID",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add. Must be channel ID",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "removeemoji",
-    description: "Give Bot emoji access",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "addchannel",
-    description: "Give Bot emoji access. Must be channel ID",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add. Must be channel ID",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "removechannel",
-    description: "Give Bot channel access",
-    dm_permission: false,
-    options: [
-      {
-        name: "channel",
-        description: "The channel to add",
-        type: 7,
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "dm",
-    description: "Bot will start a DM with you",
-    dm_permission: false,
-  },
-];
+const rest = new REST({ version: "10" }).setToken(
+  process.env.DISCORD_BOT_TOKEN
+);
 
 /**
  * Initializes the slash commands for the Discord bot.
@@ -157,22 +106,36 @@ const commands = [
  */
 (async () => {
   try {
-    const rest = new REST({ version: "10" }).setToken(
-      process.env.DISCORD_BOT_TOKEN
+    await loadCommands();
+    console.log(
+      `Started refreshing ${client.commands.size} application (/) commands.`
     );
-    console.log("Started refreshing application (/) commands.");
-    await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
-      body: commands,
-    });
-    // await rest.put(
-    //   Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, '998837617141493760'),
-    //   { body: commands }
+    // const data = await rest.put(
+    //   Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+    //   {
+    //     body: client.commands.map((command) => command.data.toJSON()),
+    //   }
     // );
-    console.log("Successfully reloaded application (/) commands.");
+
+    const data = await rest.put(
+      Routes.applicationGuildCommands(
+        process.env.DISCORD_CLIENT_ID,
+        "998837617141493760"
+      ),
+      { body: client.commands.map((command) => command.data.toJSON()) }
+    );
+    console.log(
+      `Successfully reloaded ${data.length} application (/) commands.`
+    );
   } catch (error) {
     console.error(error);
   }
 })();
+
+/**
+ * Represents the slash commands for the Discord bot.
+ * @type {Array<Object>}
+ */
 
 /**
  * Event handler for when the Discord bot client is ready.
@@ -190,153 +153,182 @@ client.once("ready", async () => {
  * @param {Interaction} interaction - The interaction object representing the interaction.
  * @returns {Promise<void>}
  */
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
-  // await db.addServer(interaction.guild.id, interaction.guild.name);
 
-  //TODO: fix permissions this is lame
-  if (
-    !(await interaction.member.roles.cache.some(
-      (role) => role.name === process.env.ADMIN_ROLE_NAME
-    ))
-  ) {
-    await interaction.reply(
-      "You do not have the required role to use this command."
-    );
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = interaction.client.commands.get(interaction.commandName);
+
+  if (!command) {
+    console.error(`No command matching ${interaction.commandName} was found.`);
     return;
   }
 
-  const { commandName } = interaction;
-
-  if (commandName === "addemoji") {
-    let channel = interaction.options.getChannel("channel");
-    if (!channel) {
-      await interaction.reply({
-        content: "No channel found with that ID!",
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({
+        content: "There was an error while executing this command!",
         ephemeral: true,
       });
-      return;
-    }
-
-    let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
-    if (res[0] === channel.id) {
+    } else {
       await interaction.reply({
-        content: "Channel with that ID already exists in database.",
+        content: "There was an error while executing this command!",
         ephemeral: true,
       });
-      return;
     }
-    await db.insert(emojis).values({ id: channel.id });
-
-    await interaction.reply({
-      content: "Added bot emoji permission in",
-      ephemeral: true,
-    });
-
-    return;
-  }
-
-  if (commandName === "removeemoji") {
-    let channel = interaction.options.getChannel("channel");
-    if (!channel) {
-      await interaction.reply({
-        content: "No channel found with that ID!",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
-    if (res.length === 0) {
-      await interaction.reply({
-        content: "Channel with that ID does not exist in database.",
-        ephemeral: true,
-      });
-      return;
-    }
-    //await db.removeChannel(channel.id);
-    await db.delete(emojis).where(eq(emojis.id, channel.id));
-
-    await interaction.reply({
-      content: "Removed bot emoji permission in",
-      ephemeral: true,
-    });
-
-    return;
-  }
-
-  if (commandName === "addchannel") {
-    let channel = interaction.options.getChannel("channel");
-    if (!channel) {
-      await interaction.reply({
-        content: "No channel found with that ID!",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    let res = await db
-      .select()
-      .from(channels)
-      .where(eq(channels.id, channel.id));
-    if (res[0] === channel.id) {
-      await interaction.reply({
-        content: "Channel with that ID already exists in database.",
-        ephemeral: true,
-      });
-      return;
-    }
-    await db.insert(channels).values({ id: channel.id });
-
-    await interaction.reply({
-      content: "Added bot chat permission in",
-      ephemeral: true,
-    });
-
-    return;
-  }
-
-  if (commandName === "removechannel") {
-    let channel = interaction.options.getChannel("channel");
-    if (!channel) {
-      await interaction.reply({
-        content: "No channel found with that ID!",
-        ephemeral: true,
-      });
-      return;
-    }
-
-    let res = await db
-      .select()
-      .from(channels)
-      .where(eq(channels.id, channel.id));
-    if (res.length === 0) {
-      await interaction.reply({
-        content: "Channel with that ID does not exist in database.",
-        ephemeral: true,
-      });
-      return;
-    }
-    //await db.removeChannel(channel.id);
-    await db.delete(channels).where(eq(channels.id, channel.id));
-
-    await interaction.reply({
-      content: "Removed bot chat permission in",
-      ephemeral: true,
-    });
-
-    return;
-  }
-
-  if (commandName === "dm") {
-    await interaction.reply({ content: "DMing you now!", ephemeral: true });
-    const dmChannel = await interaction.user.createDM();
-    //TODO: fix the parameters are wrong
-    await db.insert(channels).values({ id: dmChannel.id });
-
-    await interaction.user.send("Hello!");
   }
 });
+
+// client.on("interactionCreate", async (interaction) => {
+//   if (!interaction.isCommand()) return;
+//   // await db.addServer(interaction.guild.id, interaction.guild.name);
+
+//   //TODO: fix permissions this is lame
+//   if (
+//     !(await interaction.member.roles.cache.some(
+//       (role) => role.name === process.env.ADMIN_ROLE_NAME
+//     ))
+//   ) {
+//     await interaction.reply(
+//       "You do not have the required role to use this command."
+//     );
+//     return;
+//   }
+
+//   const { commandName } = interaction;
+
+//   if (commandName === "addemoji") {
+//     let channel = interaction.options.getChannel("channel");
+//     if (!channel) {
+//       await interaction.reply({
+//         content: "No channel found with that ID!",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+
+//     let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
+//     if (res[0] === channel.id) {
+//       await interaction.reply({
+//         content: "Channel with that ID already exists in database.",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+//     await db.insert(emojis).values({ id: channel.id });
+
+//     await interaction.reply({
+//       content: "Added bot emoji permission in",
+//       ephemeral: true,
+//     });
+
+//     return;
+//   }
+
+//   if (commandName === "removeemoji") {
+//     let channel = interaction.options.getChannel("channel");
+//     if (!channel) {
+//       await interaction.reply({
+//         content: "No channel found with that ID!",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+
+//     let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
+//     if (res.length === 0) {
+//       await interaction.reply({
+//         content: "Channel with that ID does not exist in database.",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+//     //await db.removeChannel(channel.id);
+//     await db.delete(emojis).where(eq(emojis.id, channel.id));
+
+//     await interaction.reply({
+//       content: "Removed bot emoji permission in",
+//       ephemeral: true,
+//     });
+
+//     return;
+//   }
+
+//   if (commandName === "addchannel") {
+//     let channel = interaction.options.getChannel("channel");
+//     if (!channel) {
+//       await interaction.reply({
+//         content: "No channel found with that ID!",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+
+//     let res = await db
+//       .select()
+//       .from(channels)
+//       .where(eq(channels.id, channel.id));
+//     if (res[0] === channel.id) {
+//       await interaction.reply({
+//         content: "Channel with that ID already exists in database.",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+//     await db.insert(channels).values({ id: channel.id });
+
+//     await interaction.reply({
+//       content: "Added bot chat permission in",
+//       ephemeral: true,
+//     });
+
+//     return;
+//   }
+
+//   if (commandName === "removechannel") {
+//     let channel = interaction.options.getChannel("channel");
+//     if (!channel) {
+//       await interaction.reply({
+//         content: "No channel found with that ID!",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+
+//     let res = await db
+//       .select()
+//       .from(channels)
+//       .where(eq(channels.id, channel.id));
+//     if (res.length === 0) {
+//       await interaction.reply({
+//         content: "Channel with that ID does not exist in database.",
+//         ephemeral: true,
+//       });
+//       return;
+//     }
+//     //await db.removeChannel(channel.id);
+//     await db.delete(channels).where(eq(channels.id, channel.id));
+
+//     await interaction.reply({
+//       content: "Removed bot chat permission in",
+//       ephemeral: true,
+//     });
+
+//     return;
+//   }
+
+//   if (commandName === "dm") {
+//     await interaction.reply({ content: "DMing you now!", ephemeral: true });
+//     const dmChannel = await interaction.user.createDM();
+//     //TODO: fix the parameters are wrong
+//     await db.insert(channels).values({ id: dmChannel.id });
+
+//     await interaction.user.send("Hello!");
+//   }
+// });
 
 const llm = new j3nkn5API(db);
 
