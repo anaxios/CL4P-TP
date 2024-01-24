@@ -110,20 +110,23 @@ const rest = new REST({ version: "10" }).setToken(
     console.log(
       `Started refreshing ${client.commands.size} application (/) commands.`
     );
-    // const data = await rest.put(
-    //   Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
-    //   {
-    //     body: client.commands.map((command) => command.data.toJSON()),
-    //   }
-    // );
-
-    const data = await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.DISCORD_CLIENT_ID,
-        "998837617141493760"
-      ),
-      { body: client.commands.map((command) => command.data.toJSON()) }
-    );
+    let data;
+    if (process.env.MODE === "development") {
+      data = await rest.put(
+        Routes.applicationGuildCommands(
+          process.env.DISCORD_CLIENT_ID,
+          "998837617141493760"
+        ),
+        { body: client.commands.map((command) => command.data.toJSON()) }
+      );
+    } else {
+      data = await rest.put(
+        Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+        {
+          body: client.commands.map((command) => command.data.toJSON()),
+        }
+      );
+    }
     console.log(
       `Successfully reloaded ${data.length} application (/) commands.`
     );
@@ -195,65 +198,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 //     await interaction.reply(
 //       "You do not have the required role to use this command."
 //     );
-//     return;
-//   }
-
-//   const { commandName } = interaction;
-
-//   if (commandName === "addemoji") {
-//     let channel = interaction.options.getChannel("channel");
-//     if (!channel) {
-//       await interaction.reply({
-//         content: "No channel found with that ID!",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-
-//     let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
-//     if (res[0] === channel.id) {
-//       await interaction.reply({
-//         content: "Channel with that ID already exists in database.",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-//     await db.insert(emojis).values({ id: channel.id });
-
-//     await interaction.reply({
-//       content: "Added bot emoji permission in",
-//       ephemeral: true,
-//     });
-
-//     return;
-//   }
-
-//   if (commandName === "removeemoji") {
-//     let channel = interaction.options.getChannel("channel");
-//     if (!channel) {
-//       await interaction.reply({
-//         content: "No channel found with that ID!",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-
-//     let res = await db.select().from(emojis).where(eq(emojis.id, channel.id));
-//     if (res.length === 0) {
-//       await interaction.reply({
-//         content: "Channel with that ID does not exist in database.",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-//     //await db.removeChannel(channel.id);
-//     await db.delete(emojis).where(eq(emojis.id, channel.id));
-
-//     await interaction.reply({
-//       content: "Removed bot emoji permission in",
-//       ephemeral: true,
-//     });
-
 //     return;
 //   }
 
