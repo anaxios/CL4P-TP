@@ -14,7 +14,7 @@ export const data = new SlashCommandBuilder()
       .setMaxLength(20)
   );
 
-enum AlphabetEmoji {
+enum BlueEmojiMap {
   A = "🇦",
   B = "🇧",
   C = "🇨",
@@ -43,37 +43,141 @@ enum AlphabetEmoji {
   Z = "🇿",
 }
 
-function mapStringArrayToEmoji(str: string[]): string[] {
-  let emojiStr = [];
-  for (let char of str) {
-    emojiStr.push(AlphabetEmoji[char as keyof typeof AlphabetEmoji]);
-  }
-  return emojiStr;
+enum RoundEmojiMap {
+  "🇦" = "🅐",
+  "🇧" = "🅑",
+  "🇨" = "🅒",
+  "🇩" = "🅓",
+  "🇪" = "🅔",
+  "🇫" = "🅕",
+  "🇬" = "🅖",
+  "🇭" = "🅗",
+  "🇮" = "🅘",
+  "🇯" = "🅙",
+  "🇰" = "🅚",
+  "🇱" = "🅛",
+  "🇲" = "🅜",
+  "🇳" = "🅝",
+  "🇴" = "🅞",
+  "🇵" = "🅟",
+  "🇶" = "🅠",
+  "🇷" = "🅡",
+  "🇸" = "🅢",
+  "🇹" = "🅣",
+  "🇺" = "🅤",
+  "🇻" = "🅥",
+  "🇼" = "🅦",
+  "🇽" = "🅧",
+  "🇾" = "🅨",
+  "🇿" = "🅩",
 }
 
-function filterAlphabet(str: string): string[] {
+enum RoundHollowEmojiMap {
+  "🅐" = "Ⓐ",
+  "🅑" = "Ⓑ",
+  "🅒" = "Ⓒ",
+  "🅓" = "Ⓓ",
+  "🅔" = "Ⓔ",
+  "🅕" = "Ⓕ",
+  "🅖" = "Ⓖ",
+  "🅗" = "Ⓗ",
+  "🅘" = "Ⓘ",
+  "🅙" = "Ⓙ",
+  "🅚" = "Ⓚ",
+  "🅛" = "Ⓛ",
+  "🅜" = "Ⓜ",
+  "🅝" = "Ⓝ",
+  "🅞" = "Ⓞ",
+  "🅟" = "Ⓟ",
+  "🅠" = "Ⓠ",
+  "🅡" = "Ⓡ",
+  "🅢" = "Ⓢ",
+  "🅣" = "Ⓣ",
+  "🅤" = "Ⓤ",
+  "🅥" = "Ⓥ",
+  "🅦" = "Ⓦ",
+  "🅧" = "Ⓧ",
+  "🅨" = "Ⓨ",
+  "🅩" = "Ⓩ",
+}
+
+const uppercaseRegex = /^[A-Z]$/;
+
+const blueEmojiRegex =
+  /🇦|🇧|🇨|🇩|🇪|🇫|🇬|🇭|🇮|🇯|🇰|🇱|🇲|🇳|🇴|🇵|🇶|🇷|🇸|🇹|🇺|🇻|🇼|🇽|🇾|🇿/;
+
+const roundEmojiRegex =
+  /[\🅐\🅑\🅒\🅓\🅔\🅕\🅖\🅗\🅘\🅙\🅚\🅛\🅜\🅝\🅞\🅟\🅠\🅡\🅢\🅣\🅤\🅥\🅦\🅧\🅨\🅩]/g;
+
+const roundHollowEmojiRegex =
+  /[\Ⓐ\Ⓑ\Ⓒ\Ⓓ\Ⓔ\Ⓕ\Ⓖ\Ⓗ\Ⓘ\Ⓙ\Ⓚ\Ⓛ\Ⓜ\Ⓝ\Ⓞ\Ⓟ\Ⓠ\Ⓡ\Ⓢ\Ⓣ\Ⓤ\Ⓥ\Ⓦ\Ⓧ\Ⓨ\Ⓩ]/g;
+
+function mapToBlueEmoji(char: string): string {
+  return BlueEmojiMap[char as keyof typeof BlueEmojiMap];
+}
+
+function mapToRoundEmoji(char: string): string {
+  return RoundEmojiMap[char as keyof typeof RoundEmojiMap];
+}
+
+function mapToRoundHollowEmoji(char: string): string {
+  return RoundHollowEmojiMap[char as keyof typeof RoundHollowEmojiMap];
+}
+
+function filterAlphabet(
+  str: string,
+  regex: RegExp,
+  emojiMap: Function,
+  dedubMap: Function
+): string[] {
   return str
     .toUpperCase()
     .split("")
-    .filter((char) => /^[A-Za-z]$/.test(char));
+    .reduce((acc: string[], char) => {
+      if (regex.test(char)) {
+        if (acc.find((e) => e === emojiMap(char))) {
+          acc.push(dedubMap(emojiMap(char)));
+        } else {
+          acc.push(emojiMap(char));
+        }
+      }
+      return acc;
+    }, []);
 }
 
 export async function execute(interaction: CommandInteraction) {
   //   emoji.forEach((element: EmojiIdentifierResolvable) => {
   const message = interaction.options.getString("text") ?? "fart";
-  const blueMessage: string[] = mapStringArrayToEmoji(filterAlphabet(message));
-  console.log(blueMessage);
+  const memeMessage: string[] = filterAlphabet(
+    message,
+    uppercaseRegex,
+    mapToBlueEmoji,
+    mapToRoundEmoji
+  );
+  // const roundMessage: string[] = filterAlphabet(
+  //   blueMessage,
+  //   blueEmojiRegex,
+  //   mapToRoundEmoji,
+  //   mapToRoundHollowEmoji
+  // );
+  console.log(memeMessage);
   if (!message) {
     return;
   }
-  if (blueMessage?.length !== 0 && blueMessage?.length <= 20) {
-    blueMessage.forEach(async (element: EmojiIdentifierResolvable) => {
-      //await interaction.deferReply({ ephemeral: true });
-      const response = await interaction?.channel?.lastMessage?.react(element);
-      console.log(response);
-      //await interaction.reply({ content: "done!", ephemeral: true });
+  if (memeMessage?.length !== 0 && interaction?.channel?.lastMessage) {
+    const lastMessage = interaction?.channel?.lastMessage;
+    // await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({
+      ephemeral: true,
     });
-    //   });
-    // }
+
+    for (const element of memeMessage) {
+      await lastMessage?.react(element);
+      // console.log((!!response && "response") || "null response");
+    }
+    await interaction.reply({
+      content: "done!",
+      ephemeral: true,
+    });
   }
 }
