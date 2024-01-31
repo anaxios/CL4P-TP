@@ -19,7 +19,7 @@ export default class emojiAPI {
     const { content } = message;
 
     try {
-      const url = new URL("https://api.j3nkn5.cc/emoji");
+      const url = new URL("https://j3nkn5.cc/api/emoji");
       url.searchParams.set("query", content);
       url.searchParams.set("temp", "0.5");
       url.searchParams.set("model", "togethercomputer/llama-2-70b-chat"); // upstage/SOLAR-0-70b-16bit

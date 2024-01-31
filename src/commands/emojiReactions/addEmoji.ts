@@ -4,6 +4,11 @@ import {
   EmojiIdentifierResolvable,
   PermissionFlagsBits,
 } from "discord.js";
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+import { sql } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
+import { eq, ne, gt, gte } from "drizzle-orm";
 
 export const data = new SlashCommandBuilder()
   .setName("addemoji")
@@ -18,6 +23,21 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   const { commandName } = interaction;
+
+  const drizzleClient = createClient({
+    url: process.env.DATABASE_URL,
+    authToken: process.env.DATABASE_AUTH_TOKEN,
+  });
+  const db = drizzle(drizzleClient);
+
+  const channels = sqliteTable("channels", {
+    id: text("id").primaryKey(),
+  });
+
+  const emojis = sqliteTable("emojis", {
+    id: text("id").primaryKey(),
+  });
+
   if (commandName === "addemoji") {
     let channel = interaction.options.getChannel("channel");
     if (!channel) {

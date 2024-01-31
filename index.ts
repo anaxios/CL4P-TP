@@ -201,69 +201,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 //     return;
 //   }
 
-//   if (commandName === "addchannel") {
-//     let channel = interaction.options.getChannel("channel");
-//     if (!channel) {
-//       await interaction.reply({
-//         content: "No channel found with that ID!",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-
-//     let res = await db
-//       .select()
-//       .from(channels)
-//       .where(eq(channels.id, channel.id));
-//     if (res[0] === channel.id) {
-//       await interaction.reply({
-//         content: "Channel with that ID already exists in database.",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-//     await db.insert(channels).values({ id: channel.id });
-
-//     await interaction.reply({
-//       content: "Added bot chat permission in",
-//       ephemeral: true,
-//     });
-
-//     return;
-//   }
-
-//   if (commandName === "removechannel") {
-//     let channel = interaction.options.getChannel("channel");
-//     if (!channel) {
-//       await interaction.reply({
-//         content: "No channel found with that ID!",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-
-//     let res = await db
-//       .select()
-//       .from(channels)
-//       .where(eq(channels.id, channel.id));
-//     if (res.length === 0) {
-//       await interaction.reply({
-//         content: "Channel with that ID does not exist in database.",
-//         ephemeral: true,
-//       });
-//       return;
-//     }
-//     //await db.removeChannel(channel.id);
-//     await db.delete(channels).where(eq(channels.id, channel.id));
-
-//     await interaction.reply({
-//       content: "Removed bot chat permission in",
-//       ephemeral: true,
-//     });
-
-//     return;
-//   }
-
 //   if (commandName === "dm") {
 //     await interaction.reply({ content: "DMing you now!", ephemeral: true });
 //     const dmChannel = await interaction.user.createDM();

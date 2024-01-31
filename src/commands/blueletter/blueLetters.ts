@@ -136,7 +136,7 @@ function filterAlphabet(
     .reduce((acc: string[], char) => {
       if (regex.test(char)) {
         if (acc.find((e) => e === emojiMap(char))) {
-          acc.push(dedubMap(emojiMap(char)));
+          //do nothing
         } else {
           acc.push(emojiMap(char));
         }
@@ -147,9 +147,9 @@ function filterAlphabet(
 
 export async function execute(interaction: CommandInteraction) {
   //   emoji.forEach((element: EmojiIdentifierResolvable) => {
-  const message = interaction.options.getString("text") ?? "fart";
+  const text = interaction.options.getString("text") ?? "fart";
   const memeMessage: string[] = filterAlphabet(
-    message,
+    text,
     uppercaseRegex,
     mapToBlueEmoji,
     mapToRoundEmoji
@@ -161,23 +161,28 @@ export async function execute(interaction: CommandInteraction) {
   //   mapToRoundHollowEmoji
   // );
   console.log(memeMessage);
-  if (!message) {
+  if (!text) {
     return;
   }
+
+  await interaction.deferReply({
+    ephemeral: true,
+  });
+
   if (memeMessage?.length !== 0 && interaction?.channel?.lastMessage) {
     const lastMessage = interaction?.channel?.lastMessage;
     // await interaction.deferReply({ ephemeral: true });
-    await interaction.deferReply({
-      ephemeral: true,
-    });
 
     for (const element of memeMessage) {
       await lastMessage?.react(element);
       // console.log((!!response && "response") || "null response");
     }
-    await interaction.reply({
-      content: "done!",
-      ephemeral: true,
-    });
   }
+
+  await interaction.reply({
+    content: "done!",
+    ephemeral: true,
+  });
+
+  return;
 }

@@ -22,7 +22,7 @@ primary_region = "den"
   memory_mb = 256
 
 [env]
-  API_ENDPOINT         = "https://api.j3nkn5.cc/"
+  API_ENDPOINT         = "https://j3nkn5.cc/api/chat"
   LLM_SERVICE          = "j3nkn5"
   BOT_SHUTUP_PREFIX    = "@"
   ADMIN_ROLE_NAME      = "Admin"
