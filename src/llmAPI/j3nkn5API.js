@@ -7,7 +7,6 @@ import Logger from "../utils/logger.js";
 // import { v4 as uuidv4 } from "uuid";
 // import CryptoJS from "crypto-js";
 
-
 export default class j3nkn5API {
   constructor(db) {
     this.logger = new Logger();
@@ -25,17 +24,18 @@ export default class j3nkn5API {
     const { content } = message;
 
     try {
-      const url = new URL(process.env.API_ENDPOINT); 
+      const url = new URL(process.env.API_ENDPOINT);
       url.searchParams.set("query", content);
-      url.searchParams.set("llm", "true");
+      url.searchParams.set("model", "true");
       url.searchParams.set("vectors", "true");
       console.log(url.toString());
       const request = new Request(url, {
-		    method: 'GET',
+        method: "GET",
         headers: {
           "Content-Type": "application/text",
-          "Authorization": `Bearer ${process.env.API_KEY}`,
-      }});
+          Authorization: `Bearer ${process.env.API_KEY}`,
+        },
+      });
 
       const response = await fetch(request);
 

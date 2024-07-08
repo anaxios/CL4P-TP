@@ -36,11 +36,11 @@ class j3nkn5API {
                 url.searchParams.set("vectors", "true");
                 console.log(url.toString());
                 const request = new Request(url, {
-                    method: 'GET',
+                    method: "GET",
                     headers: {
                         "Content-Type": "application/text",
-                        "Authorization": `Bearer ${process.env.API_KEY}`,
-                    }
+                        Authorization: `Bearer ${process.env.API_KEY}`,
+                    },
                 });
                 const response = yield fetch(request);
                 if (!response.ok) {

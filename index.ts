@@ -211,159 +211,159 @@ client.on(Events.InteractionCreate, async (interaction) => {
 //   }
 // });
 
-const llm = new j3nkn5API(db);
+// const llm = new j3nkn5API(db);
 
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
+// client.on("messageCreate", async (message) => {
+//   if (message.author.bot) return;
+//   //if (!process.env.CHANNEL_WHITELIST_ID.includes(message.channelId)) return;
 
-  // ########################################################################
-  let emojiIsAllowed = await db
-    .select()
-    .from(emojis)
-    .where(eq(emojis.id, message.channel.id));
+//   // ########################################################################
+//   let emojiIsAllowed = await db
+//     .select()
+//     .from(emojis)
+//     .where(eq(emojis.id, message.channel.id));
 
-  if (emojiIsAllowed[0]?.id !== message.channel.id) {
-    logger.debug(`emoji is not allowed: ${JSON.stringify(emojiIsAllowed)}`);
-    return;
-  }
-  const emojiGetter: EmojiAPI = new emojiAPI();
-  const emoji = await emojiGetter.send(message);
-  if (emoji?.length !== 0) {
-    emoji.forEach((element: EmojiIdentifierResolvable) => {
-      message.react(element);
-    });
-  }
-  // ########################################################################
-});
+//   if (emojiIsAllowed[0]?.id !== message.channel.id) {
+//     logger.debug(`emoji is not allowed: ${JSON.stringify(emojiIsAllowed)}`);
+//     return;
+//   }
+//   const emojiGetter: EmojiAPI = new emojiAPI();
+//   const emoji = await emojiGetter.send(message);
+//   if (emoji?.length !== 0) {
+//     emoji.forEach((element: EmojiIdentifierResolvable) => {
+//       message.react(element);
+//     });
+//   }
+//   // ########################################################################
+// });
 
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+// client.on("messageCreate", async (message) => {
+//   if (message.author.bot) return;
 
-  let isAllowed = await db
-    .select()
-    .from(channels)
-    .where(eq(channels.id, message.channel.id));
-  logger.debug(`isAllowed: ${JSON.stringify(isAllowed)}`);
-  if (isAllowed[0]?.id !== message.channel.id) {
-    //logger.debug(`isAllowed: ${isAllowed[0]}`);
-    logger.warn(`Bot is not allowed in channel ${message.channel.id}`);
-    return;
-  }
-  if (message.content.startsWith(process.env.BOT_SHUTUP_PREFIX)) return;
-  if (message.type == MessageType.SYSTEM_MESSAGE) return;
-  if (message.type == MessageType.ThreadStarterMessage) return;
-  // await db.addUser(message.author.id, message.author.username);
+//   let isAllowed = await db
+//     .select()
+//     .from(channels)
+//     .where(eq(channels.id, message.channel.id));
+//   logger.debug(`isAllowed: ${JSON.stringify(isAllowed)}`);
+//   if (isAllowed[0]?.id !== message.channel.id) {
+//     //logger.debug(`isAllowed: ${isAllowed[0]}`);
+//     logger.warn(`Bot is not allowed in channel ${message.channel.id}`);
+//     return;
+//   }
+//   if (message.content.startsWith(process.env.BOT_SHUTUP_PREFIX)) return;
+//   if (message.type == MessageType.SYSTEM_MESSAGE) return;
+//   if (message.type == MessageType.ThreadStarterMessage) return;
+//   // await db.addUser(message.author.id, message.author.username);
 
-  // Check if the message has attachments
-  if (message.attachments.size > 0) {
-    message.attachments.forEach(async (attachment) => {
-      let atreply = await llm.storeAttachment(attachment);
-      message.reply(`${atreply}`);
-    });
-    message.reply(`Embedding started.`);
-    return;
-  }
+//   // Check if the message has attachments
+//   if (message.attachments.size > 0) {
+//     message.attachments.forEach(async (attachment) => {
+//       let atreply = await llm.storeAttachment(attachment);
+//       message.reply(`${atreply}`);
+//     });
+//     message.reply(`Embedding started.`);
+//     return;
+//   }
 
-  let formattedMessage = await formatMessage(message);
+//   let formattedMessage = await formatMessage(message);
 
-  try {
-    message.channel.sendTyping();
+//   try {
+//     message.channel.sendTyping();
 
-    let res = await llm.sendMessage(formattedMessage, client);
+//     let res = await llm.sendMessage(formattedMessage, client);
 
-    let vectors = [];
-    for (let chunk of res?.vector) {
-      vectors.push(
-        `SOURCE: ${chunk.metadata.filename}\nTEXT: ${chunk.pageContent}`
-      );
-    }
+//     let vectors = [];
+//     for (let chunk of res?.vector) {
+//       vectors.push(
+//         `SOURCE: ${chunk.metadata.filename}\nTEXT: ${chunk.pageContent}`
+//       );
+//     }
 
-    logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
+//     logger.debug(`LLM MESSAGE RESPONSE: ${res}`);
 
-    let iterator = messageIterator(
-      `ANSWER: ${res?.query}\n\n` + vectors.join("\n\n"),
-      4096
-    );
-    for await (let chunk of iterator) {
-      const embed = new EmbedBuilder()
-        //.setTitle('ANSWER')
-        .setDescription(chunk);
-      await message.channel.send({ embeds: [embed] });
-      //.addFields();
-      //   await message.reply(chunk);
-    }
-  } catch (e) {
-    console.error(e);
-  }
-});
+//     let iterator = messageIterator(
+//       `ANSWER: ${res?.query}\n\n` + vectors.join("\n\n"),
+//       4096
+//     );
+//     for await (let chunk of iterator) {
+//       const embed = new EmbedBuilder()
+//         //.setTitle('ANSWER')
+//         .setDescription(chunk);
+//       await message.channel.send({ embeds: [embed] });
+//       //.addFields();
+//       //   await message.reply(chunk);
+//     }
+//   } catch (e) {
+//     console.error(e);
+//   }
+// });
 
-async function formatMessage(message) {
-  let channel = message.channel; // The channel the command was executed
-  return {
-    author: message.author.id,
-    authorName: message.author.username,
-    content: message.content,
-  };
-}
+// async function formatMessage(message) {
+//   let channel = message.channel; // The channel the command was executed
+//   return {
+//     author: message.author.id,
+//     authorName: message.author.username,
+//     content: message.content,
+//   };
+// }
 
-/**
- * Retrieves the message history for a given channel.
- * @param {Message} message - The message object representing the current message.
- * @param {number} [limit=20] - The maximum number of messages to fetch.
- * @returns {Promise<Array<Object>>} The message history.
- */
-async function initGetMessageHistory(message, limit = 100) {
-  let channel = message.channel; // The channel the command was executed in
-  if (limit < 2) {
-    return await channel.messages
-      .fetch({ limit: 1 })
-      .then((message) => {
-        return {
-          author: message.author.id,
-          content: message.content,
-        };
-      })
-      .catch(console.error); // Fetch last 1 message
-  }
-  return await channel.messages
-    .fetch({ limit: limit }) // Fetch last 100 messages
-    .then((messages) =>
-      messages
-        .map((element) => {
-          return {
-            author: element.author.id,
-            content: element.content,
-          };
-        })
-        .filter((element) => !element.content.startsWith("%"))
-        .reverse()
-    )
-    .catch(console.error);
-}
+// /**
+//  * Retrieves the message history for a given channel.
+//  * @param {Message} message - The message object representing the current message.
+//  * @param {number} [limit=20] - The maximum number of messages to fetch.
+//  * @returns {Promise<Array<Object>>} The message history.
+//  */
+// async function initGetMessageHistory(message, limit = 100) {
+//   let channel = message.channel; // The channel the command was executed in
+//   if (limit < 2) {
+//     return await channel.messages
+//       .fetch({ limit: 1 })
+//       .then((message) => {
+//         return {
+//           author: message.author.id,
+//           content: message.content,
+//         };
+//       })
+//       .catch(console.error); // Fetch last 1 message
+//   }
+//   return await channel.messages
+//     .fetch({ limit: limit }) // Fetch last 100 messages
+//     .then((messages) =>
+//       messages
+//         .map((element) => {
+//           return {
+//             author: element.author.id,
+//             content: element.content,
+//           };
+//         })
+//         .filter((element) => !element.content.startsWith("%"))
+//         .reverse()
+//     )
+//     .catch(console.error);
+// }
 
-/**
- * Generates an asynchronous iterator that yields chunks of an array.
- *
- * @param {Array} arr - The array to iterate over.
- * @param {number} [chunkSize=2000] - The size of each chunk.
- * @returns {AsyncGenerator<Array>} The asynchronous iterator.
- */
-async function* messageIterator(arr, chunkSize = 2000) {
-  let index = 0;
+// /**
+//  * Generates an asynchronous iterator that yields chunks of an array.
+//  *
+//  * @param {Array} arr - The array to iterate over.
+//  * @param {number} [chunkSize=2000] - The size of each chunk.
+//  * @returns {AsyncGenerator<Array>} The asynchronous iterator.
+//  */
+// async function* messageIterator(arr, chunkSize = 2000) {
+//   let index = 0;
 
-  while (index < arr.length) {
-    yield arr.slice(index, index + chunkSize);
-    index += chunkSize;
-  }
-}
+//   while (index < arr.length) {
+//     yield arr.slice(index, index + chunkSize);
+//     index += chunkSize;
+//   }
+// }
 
-const hono = new Hono();
-hono.get("/status", (c) => {
-  return c.text("OK");
-});
+// const hono = new Hono();
+// hono.get("/status", (c) => {
+//   return c.text("OK");
+// });
 
-export default {
-  fetch: hono.fetch,
-  port: 7860,
-};
+// export default {
+//   fetch: hono.fetch,
+//   port: 7860,
+// };
