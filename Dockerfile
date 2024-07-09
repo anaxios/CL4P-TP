@@ -6,13 +6,14 @@ WORKDIR /app
 # this will cache them and speed up future builds
 FROM base AS install
 RUN mkdir -p /temp/dev
-COPY package.json bun.lockb /temp/dev/
+#COPY package.json bun.lockb /temp/dev/
+COPY package.json /temp/dev/
 RUN cd /temp/dev && bun install --frozen-lockfile
 COPY package*.json .
 
 # install with --production (exclude devDependencies)
 RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
+COPY package.json /temp/prod/
 RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 # copy node_modules from temp directory
@@ -30,7 +31,7 @@ ENV NODE_ENV=production
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /app/src src
-COPY --from=prerelease /app/index.ts .
+#COPY --from=prerelease /app/src/index.ts .
 COPY --from=prerelease /app/package.json .
 # COPY --from=prerelease /app/app .
 
@@ -53,5 +54,5 @@ COPY --from=prerelease /app/package.json .
 # run the app
 #USER bun
 EXPOSE 7860
-ENTRYPOINT [ "bun", "run", "index.ts" ]
+ENTRYPOINT [ "bun", "run", "./src/index.ts" ]
 # ENTRYPOINT [ "./app" ]

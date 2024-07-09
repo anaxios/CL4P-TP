@@ -1,5 +1,5 @@
-// import llmFactory from "./src/llmAPI/llmFactory.js";
-import j3nkn5API from "./src/llmAPI/j3nkn5API.js";
+// import llmFactory from "./llmAPI/llmFactory.js";
+import j3nkn5API from "./llmAPI/j3nkn5API.js";
 import {
   Client,
   REST,
@@ -13,7 +13,7 @@ import {
 } from "discord.js";
 // import dotenv from "dotenv";
 // dotenv.config();
-import Logger from "./src/utils/logger.js";
+import Logger from "./utils/logger.js";
 // import DatabaseFactory from "./db/DatabaseFactory.js";
 //import { serve } from '@hono/node-server';
 import { Hono } from "hono";
@@ -25,7 +25,7 @@ import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 import { eq, ne, gt, gte } from "drizzle-orm";
 import fs from "node:fs";
 import path from "node:path";
-import emojiAPI from "./src/emojiAPI";
+import emojiAPI from "./emojiAPI";
 
 const drizzleClient = createClient({
   url: process.env.DATABASE_URL,
