@@ -2,14 +2,14 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { CommandInteraction, EmojiIdentifierResolvable } from "discord.js";
 
 export const data = new SlashCommandBuilder()
-  .setName("start")
-  .setDescription("Starts the Minecraft Server if stopped.");
+  .setName("link")
+  .setDescription("Get the current link of the minecraft server.");
 
 export async function execute(interaction: CommandInteraction) {
   try {
     await interaction.deferReply({ ephemeral: false });
 
-    const endpoint = "https://api.my-mc.link/start";
+    const endpoint = "https://api.my-mc.link/my-link";
 
     const url = new URL(endpoint);
 
@@ -26,21 +26,15 @@ export async function execute(interaction: CommandInteraction) {
 
     const response = await fetch(request);
 
-    const message = await response.json();
-
     if (!response.ok) {
-      const error = new Error(`HTTP error! status: ${response.status}`);
-      await interaction.editReply({
-        content: `**MESSAGE:** Server already running.`,
-        ephemeral: false,
-      });
-      return error;
+      return new Error(`HTTP error! status: ${response.status}`);
     }
 
     //console.log(await response.json());
 
+    const message = await response.json();
     await interaction.editReply({
-      content: `**MESSAGE:** ${message.message}`,
+      content: `**LINK:** ${message.hostname}:${message.port}`,
       ephemeral: false,
     });
   } catch (error) {
